@@ -2427,6 +2427,10 @@ namespace NBrightCore.render
                         }
                     }
                 }
+
+                //remove possible SQL injection commands
+                strOut = StripSqlCommands(strOut);
+
                 return strOut;
             }
             return "";
@@ -2518,6 +2522,10 @@ namespace NBrightCore.render
                 {
                     strOut += strAttr[0];
                 }
+
+                //remove possible SQL injection commands
+                strOut = StripSqlCommands(strOut);
+
                 return strOut;
             }
             return "";
@@ -2535,6 +2543,9 @@ namespace NBrightCore.render
             strOut += "') = '" + searchText + Convert.ToChar("'");
             strOut += ")";
 
+            //remove possible SQL injection commands
+            strOut = StripSqlCommands(strOut);
+
             return strOut;
         }
 
@@ -2550,7 +2561,40 @@ namespace NBrightCore.render
             strOut += "') collate Latin1_General_CI_AI LIKE '%" + searchText + "%'";
             strOut += ")";
 
+            //remove possible SQL injection commands
+            strOut = StripSqlCommands(strOut);
+
             return strOut;
+        }
+
+        public static string StripSqlCommands(String SqlCmd)
+        {
+            // Strip command from string to make SQL Injection Safe.
+            SqlCmd = " " + SqlCmd.ToLower();
+            SqlCmd = SqlCmd.Replace(" dbcc "," ");
+            SqlCmd = SqlCmd.Replace(" update ", " ");
+            SqlCmd = SqlCmd.Replace(" delete ", " ");
+            SqlCmd = SqlCmd.Replace(" insert ", " ");
+            SqlCmd = SqlCmd.Replace(" drop ", " ");
+            SqlCmd = SqlCmd.Replace(" create ", " ");
+            SqlCmd = SqlCmd.Replace(" alter ", " ");
+            SqlCmd = SqlCmd.Replace(" backup ", " ");
+            SqlCmd = SqlCmd.Replace(" restore ", " ");
+            SqlCmd = SqlCmd.Replace(" open ", " ");
+            SqlCmd = SqlCmd.Replace(" close ", " ");
+            SqlCmd = SqlCmd.Replace(" kill ", " ");
+            SqlCmd = SqlCmd.Replace(" set ", " ");
+            SqlCmd = SqlCmd.Replace(" add ", " ");
+            SqlCmd = SqlCmd.Replace(" truncate ", " ");
+            SqlCmd = SqlCmd.Replace(" disable ", " ");
+            SqlCmd = SqlCmd.Replace(" commit ", " ");
+            SqlCmd = SqlCmd.Replace(" begin ", " ");
+            SqlCmd = SqlCmd.Replace(" enable ", " ");
+            SqlCmd = SqlCmd.Replace(" disable ", " ");
+            SqlCmd = SqlCmd.Replace(" use ", " ");
+
+            return SqlCmd;
+
         }
 
         public static string SerializeToString(object obj)
