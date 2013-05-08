@@ -34,6 +34,8 @@ namespace NBrightCore.TemplateEngine
                 templateData = ReplaceTemplateTokens(templateData, lang);
             }
 
+            templateData = ReplaceResourceString(templateData);
+
             return templateData;
         }
 
@@ -41,6 +43,12 @@ namespace NBrightCore.TemplateEngine
         {
             var strOut = TemplCtrl1.ReplaceTemplateTokens(templText, lang, recursiveCount);
             strOut = TemplCtrl2.ReplaceTemplateTokens(strOut, lang, recursiveCount);
+            return strOut;
+        }
+
+        public string ReplaceResourceString(string templText)
+        {
+            var strOut = TemplCtrl1.ReplaceResourceString(templText);
             return strOut;
         }
 
