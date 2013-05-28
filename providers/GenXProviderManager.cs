@@ -25,8 +25,17 @@ namespace NBrightCore.providers
             if (!string.IsNullOrEmpty(providerAssembyClass))
             {
                 var prov = providerAssembyClass.Split(Convert.ToChar(","));
-                var handle = Activator.CreateInstance(prov[0], prov[1]);
-                return (GenXProvider)handle.Unwrap();
+                try
+                {
+                    var handle = Activator.CreateInstance(prov[0], prov[1]);
+                    return (GenXProvider)handle.Unwrap();
+                }
+                catch (Exception)
+                {
+                    // Error in provider is invalid provider, so remove from providerlist.
+                    if (ProviderList.ContainsKey(providerAssembyClass)) ProviderList.Remove(providerAssembyClass);
+                    return null;
+                }
             }
             return null;
         }
@@ -42,7 +51,11 @@ namespace NBrightCore.providers
         {
             if (!ProviderList.ContainsKey(providerAssembyClass))
             {
-                ProviderList.Add(providerAssembyClass, CreateProvider(providerAssembyClass));                
+                var prov = CreateProvider(providerAssembyClass);
+                if (prov != null)
+                {
+                    ProviderList.Add(providerAssembyClass, prov);
+                }
             }
         }
 
@@ -84,10 +97,14 @@ namespace NBrightCore.providers
                         var lp = 0;
                         foreach (XmlNode xNod in xmlList)
                         {
-                            ProviderList.Add(xNod.InnerText, CreateProvider(xNod.InnerText));
-                            //set default as first in list
-                            if (lp == 0) Default = ProviderList[xNod.InnerText];
-                            lp = lp + 1;
+                            var prov = CreateProvider(xNod.InnerText);
+                            if (prov != null)
+                            {
+                                ProviderList.Add(xNod.InnerText, prov);
+                                //set default as first in list
+                                if (lp == 0) Default = ProviderList[xNod.InnerText];
+                                lp = lp + 1;                                
+                            }
                         }
                     }
                 }

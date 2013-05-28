@@ -35,9 +35,33 @@ namespace NBrightCore.controls
         public string TextNext { get; set; }
         public string TextPrevSection { get; set; }
         public string TextNextSection { get; set; }
-      
+
+        /// <summary>
+        /// Use a html href link link for hte paging buttons, this is so SEO robots can follow them easily (Only needed for Front Office Display)
+        /// </summary>
+        public bool UseHrefLink
+        {
+            set
+            {
+                if (value)
+                {
+                    //SEO page link
+                    var modparam = "";
+                    if (ModuleId != "") modparam = "&pagemid=" + ModuleId;
+                    RpData.ItemTemplate = new GenXmlTemplate("<a href=\"?page=[<tag type='valueof' databind='PageNumber' />]" + modparam + "\">[<tag type='valueof' databind='Text' />]</a>");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Use to add a moduleid onto the pg param, so multiple modules can use paging on 1 page.
+        /// </summary>
+        public String ModuleId { get; set; }
+
         public PagingCtrl()
         {
+            UseHrefLink = false;
+            ModuleId = "";
             CurrentPage = 1;
             PageSize = 10;
             TotalRecords = 0;
@@ -71,12 +95,13 @@ namespace NBrightCore.controls
             base.OnInit(e);
             RpData = new Repeater();
             RpData.ItemCommand += new RepeaterCommandEventHandler(ClientItemCommand);
+
             RpData.ItemTemplate = new GenXmlTemplate("[<tag id='cmdPg' type='linkbutton' Text='databind:Text' commandname='Page' commandargument='PageNumber' />]");
+
             this.Controls.AddAt(0, new LiteralControl("</div>"));
             this.Controls.AddAt(0, RpData);
             this.Controls.AddAt(0, new LiteralControl("<div class='" + CssPagingDiv + "'>"));
         }
-
 
         public event RepeaterCommandEventHandler PageChanged;
 

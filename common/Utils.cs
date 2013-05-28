@@ -237,6 +237,8 @@ namespace NBrightCore.common
         /// </summary>
         public static bool IsNumeric(object expression, string cultureCode = "")
         {
+            if (expression == null) return false;
+
             double retNum;
             bool isNum = false;
             if (cultureCode != "")

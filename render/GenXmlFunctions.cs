@@ -2510,7 +2510,7 @@ namespace NBrightCore.render
                     for (int i = 0; i < xpath.Length; i++)
                     {
                         strOut += "[" + dataField[i] + "].value('(" + xpath[i];
-                        strOut += ")[1]', '" + sqlType[i];
+                        strOut += ")[1]', '" + sqlType[i].Replace('.', ','); // use the . for the decimal(10,2) formatting in template, so we don;t clash on the Split. decimal(10.2) ---> decimal(10,2)
                         strOut += "') " + orderSeq[i];
                         if (i < (xpath.Length - 1))
                         {
