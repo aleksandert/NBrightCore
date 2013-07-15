@@ -800,5 +800,17 @@ namespace NBrightCore
         public string Value { get; set; }
     }
 
+    /// <summary>
+    /// Static Class to store Global NBright Settings data
+    /// </summary>
+    public static class NBrightGlobal
+    {
+        /// <summary>
+        /// This global boolean is used to display controls during the daa binding process.
+        /// It need to be gloabl so providers can use it.
+        /// It is set in the "GenXmlTemplate" by the "testof" and "endtestof" tag tokens
+        /// </summary>
+        public static bool IsVisible { get; set; }
+    }
 
 }

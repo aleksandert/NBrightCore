@@ -1959,6 +1959,9 @@ namespace NBrightCore.render
         {
             try
             {
+                if (String.IsNullOrEmpty(dataXml)) return null;
+                if (String.IsNullOrEmpty(xPath)) return null;
+
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(dataXml);
                 var xmlNod = xmlDoc.SelectSingleNode(xPath.ToLower());
@@ -2272,9 +2275,9 @@ namespace NBrightCore.render
             return strOut;
         }
 
-        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData")
+        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "")
         {
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn) };
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode) };
 
             dlGen.DataSource = objList;
             dlGen.DataBind();
@@ -2288,10 +2291,10 @@ namespace NBrightCore.render
             return sb.ToString();
         }
 
-        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData")
+        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "")
         {
             var arylist = new ArrayList();
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText,xmlRootName, dataBindXmlColumn) };
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode) };
 
             arylist.Add(objInfo);
 
@@ -2331,18 +2334,29 @@ namespace NBrightCore.render
 
         public static string GetSqlSearchFilters(Repeater rp1, HttpContext context)
         {
-            var strValueList = new List<String>();
-
-            //only do if entry already created
-            if (rp1.Items.Count >= 1)
+            var strOut = "";
+            var objTempl = (GenXmlTemplate)rp1.ItemTemplate;
+            if (objTempl != null)
             {
+                strOut = GetSqlSearchFilters(rp1,objTempl,context);
+            }
+            return strOut;
+        }
+        public static string GetSqlSearchFilters(Repeater rp1, string TemplateText, HttpContext context)
+        {
+            var objTempl = new GenXmlTemplate(TemplateText);
+            {
+                return GetSqlSearchFilters(rp1, objTempl, context);
+            }
+        }
+
+        public static string GetSqlSearchFilters(Repeater rp1, GenXmlTemplate objTempl, HttpContext context)
+        {
                 var strOut = "";
-                var processFilterSQL = "";
+                var processFilterSql = "";
                 // add meta tags to list (meta tag are now the default, this breaks compatablity with hidden fields.)
-                var objTempl = (GenXmlTemplate)rp1.ItemTemplate;
                 if (objTempl != null)
                 {
-
                     foreach (var mt in objTempl.MetaTags)
                     {
                         var orderId = GenXmlFunctions.GetGenXmlValue(mt, "tag/@id");
@@ -2375,16 +2389,23 @@ namespace NBrightCore.render
                                     }
                                     else
                                     {
-                                        searchText = GetField(rp1, strAttrOr3[i].ToLower());
+                                        if (rp1.Items.Count >= 1)  // Can only get postback vars after page load has processed. (use param: to pass back search paramfor xsl which is initialized in page init)
+                                            searchText = GetField(rp1, strAttrOr3[i].ToLower());
+                                        //[TODO: would be nice to use the postback context to get the field value, but need to work out how to get the form key correct.]
+                                        //if (context.Request.Form[strAttrOr3[i].ToLower()] != null)
+                                        //    searchText = context.Request.Form[strAttrOr3[i].ToLower()];
                                     }
 
                                     if (searchText != "")
                                     {
                                         if (i > 0)
                                         {
-                                            if (GetField(rp1, strAttrOr3[i - 1].ToLower()) != "")
+                                            if (rp1.Items.Count >= 1)  // Can only get postback vars after page load has processed. (use param: to pass back search paramfor xsl which is initialized in page init)
                                             {
-                                                strOut2 += " or ";
+                                                if (GetField(rp1, strAttrOr3[i - 1].ToLower()) != "")
+                                                {
+                                                    strOut2 += " or ";
+                                                }                                                
                                             }
                                         }
                                         if (testType == "=")
@@ -2410,20 +2431,20 @@ namespace NBrightCore.render
                         }
 
                         // set flag to process filtersql data if there.
-                        if (orderId.ToLower() == "sqlfilter") processFilterSQL = GenXmlFunctions.GetGenXmlValue(mt, "tag/@value");
+                        if (orderId.ToLower() == "sqlfilter") processFilterSql = GenXmlFunctions.GetGenXmlValue(mt, "tag/@value");
 
                     }
 
                     // see if we've specific some SQL to filter the data.
-                    if (processFilterSQL != "")
+                    if (processFilterSql != "")
                     {
-                        if (processFilterSQL.TrimStart(' ').ToLower().StartsWith("and"))
+                        if (processFilterSql.TrimStart(' ').ToLower().StartsWith("and"))
                         {
-                            strOut += " " + System.Web.HttpUtility.HtmlDecode(processFilterSQL);
+                            strOut += " " + System.Web.HttpUtility.HtmlDecode(processFilterSql);
                         }
                         else
                         {
-                            strOut += " and " + System.Web.HttpUtility.HtmlDecode(processFilterSQL);
+                            strOut += " and " + System.Web.HttpUtility.HtmlDecode(processFilterSql);
                         }
                     }
                 }
@@ -2432,8 +2453,6 @@ namespace NBrightCore.render
                 strOut = StripSqlCommands(strOut);
 
                 return strOut;
-            }
-            return "";
         }
 
         public static string GetSqlOrderBy(Repeater rp1)

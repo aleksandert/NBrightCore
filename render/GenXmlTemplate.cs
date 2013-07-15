@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -20,7 +21,8 @@ namespace NBrightCore.render
         protected string EditCultureCode = "";
         private Dictionary<string, string> hiddenFields;
 		private string _ResourcePath = "";
-
+        private List<bool> _isVisibleList;
+        
         public String GetHiddenFieldValue(string Key)
         {
             if (hiddenFields.ContainsKey(Key.ToLower()))
@@ -37,15 +39,15 @@ namespace NBrightCore.render
             
         }
 
-        public GenXmlTemplate(string templateText): this(templateText, "genxml", "XMLData")
+        public GenXmlTemplate(string templateText): this(templateText, "genxml", "XMLData", "")
         {
         }
 
-        public GenXmlTemplate(string templateText, string xmlRootName): this(templateText, xmlRootName, "XMLData")
+        public GenXmlTemplate(string templateText, string xmlRootName): this(templateText, xmlRootName, "XMLData","")
         {
         }
 
-        public GenXmlTemplate(string templateText, string xmlRootName, string dataBindXmlColumn)
+        public GenXmlTemplate(string templateText, string xmlRootName, string dataBindXmlColumn, string cultureCode)
         {
             //set the rootname of the xml, this allows for compatiblity with legacy xml structure
             Rootname = xmlRootName;
@@ -53,6 +55,7 @@ namespace NBrightCore.render
             DatabindColumn = dataBindXmlColumn;
             MetaTags = new List<string>();
             hiddenFields = new Dictionary<string, string>();
+            EditCultureCode = cultureCode;
 
             // find any meta tags
             var xmlDoc = new XmlDocument();
@@ -77,7 +80,7 @@ namespace NBrightCore.render
                             ctrltype = xmlNod.Attributes["ctrltype"].InnerXml.ToLower();
                         }
 
-                        if (ctrltype=="meta")
+                        if (ctrltype == "meta" | ctrltype == "const")  //also add const to meta tag list
                         {
                             MetaTags.Add(s);
 							if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["id"] != null)))
@@ -120,6 +123,9 @@ namespace NBrightCore.render
         /// </summary>
         public void InstantiateIn(Control container)
         {
+            _isVisibleList = new List<bool>();
+            NBrightGlobal.IsVisible = true;
+
             if (CurrentPage != null)
             {
                 container.Page = CurrentPage;                
@@ -183,6 +189,9 @@ namespace NBrightCore.render
                                 case "testof":
                                     CreateTestOf(container, xmlNod);
                                     break;
+                                case "endtestof":
+                                    CreateEndTestOf(container, xmlNod);
+                                    break;
                                 case "htmlof":
                                     CreateHtmlOf(container, xmlNod);
                                     break;
@@ -240,6 +249,14 @@ namespace NBrightCore.render
                                     }
                                     // meta tags are for passing data to the system only and should not be displayed. (e.g. orderby field)
                                     break;
+                                case "itemindex":
+                                    if (container.GetType() == typeof(RepeaterItem))
+                                    {
+                                        var c = (RepeaterItem)container;
+                                        var litC = new Literal { Text = c.ItemIndex.ToString(CultureInfo.InvariantCulture) };
+                                        container.Controls.Add(litC);                                        
+                                    }
+                                    break;
                                 default:
 
                                     var providerCtrl = false;
@@ -250,7 +267,7 @@ namespace NBrightCore.render
                                     {                                    
                                         foreach (var prov in providerList)
                                         {
-                                            providerCtrl = prov.Value.CreateGenControl(ctrltype, container, xmlNod, Rootname, DatabindColumn);
+                                            providerCtrl = prov.Value.CreateGenControl(ctrltype, container, xmlNod, Rootname, DatabindColumn, EditCultureCode);
                                             if (providerCtrl)
                                             {
                                                 break;
@@ -278,6 +295,7 @@ namespace NBrightCore.render
                     else
                     {
                         var lc = new Literal {Text = AryTempl[lp]};
+                        lc.DataBinding += LiteralDataBinding;  // used to get if visible or not.
                         container.Controls.Add(lc);
                     }
                 }
@@ -291,6 +309,12 @@ namespace NBrightCore.render
         private void CreateValueOf(Control container, XmlNode xmlNod)
         {
             var lc = new Literal();
+            
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["Text"] != null))
+            {
+                lc.Text = "resxdata:" + xmlNod.Attributes["Text"].InnerXml;
+            }
+
             if (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null))
             {
                 lc.Text = xmlNod.Attributes["xpath"].InnerXml;
@@ -357,6 +381,13 @@ namespace NBrightCore.render
         {
             var lc = new Literal {Text = xmlNod.OuterXml};
             lc.DataBinding += TestOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
+        private void CreateEndTestOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal { Text = xmlNod.OuterXml };
+            lc.DataBinding += EndTestOfDataBinding;
             container.Controls.Add(lc);
         }
 
@@ -1008,6 +1039,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
+                hid.Visible = NBrightGlobal.IsVisible;
                 if (hid.Attributes["databind"] != null)
                 {
                     hid.Attributes["value"] = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["databind"]));                    
@@ -1079,64 +1111,64 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                if ((hid.Attributes["databind"] != null))
+                hid.Visible = NBrightGlobal.IsVisible;
+                if (container.DataItem != null && DataBinder.Eval(container.DataItem, DatabindColumn) != null)
                 {
-                    hid.Text = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["databind"]));
-                }
-                else
-                {
-                    var nod = GenXmlFunctions.GetGenXmLnode(hid.ID, hid.Text, Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn)));
-                    if ((nod != null))
+                    if ((hid.Attributes["databind"] != null))
                     {
-                        hid.Text = nod.InnerText;
+                        hid.Text = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["databind"]));
                     }
                     else
                     {
-                        nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), hid.Text);
-                        if (nod != null)
+                        var nod = GenXmlFunctions.GetGenXmLnode(hid.ID, hid.Text, Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn)));
+                        if ((nod != null))
                         {
                             hid.Text = nod.InnerText;
                         }
                         else
                         {
-                            hid.Text = "";
-                        }
-                    }
-
-
-                    if (hid.Attributes["datatype"] != null)
-                    {
-                        var strFormat = "";
-                        if (hid.Attributes["datatype"] == "double")
-                        {
-                            if (Utils.IsNumeric(hid.Attributes["value"]))
+                            nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), hid.Text);
+                            if (nod != null)
                             {
-                                if (hid.Attributes["format"] != null)
-                                {
-                                    strFormat = hid.Attributes["format"];
-                                }
-                                hid.Text = Utils.FormatToDisplay(hid.Text, Utils.GetCurrentCulture(), TypeCode.Double, strFormat);
+                                hid.Text = nod.InnerText;
                             }
                         }
-                        else if (hid.Attributes["datatype"] == "date")
-                        {
-                            if (Utils.IsDate(hid.Attributes["value"]))
-                            {
-                                strFormat = "d";
-                                if (hid.Attributes["format"] != null)
-                                {
-                                    strFormat = hid.Attributes["format"];
-                                }
-                                hid.Text = Utils.FormatToDisplay(hid.Text, Utils.GetCurrentCulture(), TypeCode.DateTime, strFormat);
-                            }
-                        }
-                    }
-
-                    if ((hid.Attributes["length"] != null))
-                    {
-                        hid.Text = hid.Text.Substring(0, Convert.ToInt32(hid.Attributes["length"]));
                     }
                 }
+
+                if (hid.Attributes["datatype"] != null)
+                {
+                    var strFormat = "";
+                    if (hid.Attributes["datatype"] == "double")
+                    {
+                        if (Utils.IsNumeric(hid.Attributes["value"]))
+                        {
+                            if (hid.Attributes["format"] != null)
+                            {
+                                strFormat = hid.Attributes["format"];
+                            }
+                            hid.Text = Utils.FormatToDisplay(hid.Text, Utils.GetCurrentCulture(), TypeCode.Double, strFormat);
+                        }
+                    }
+                    else if (hid.Attributes["datatype"] == "date")
+                    {
+                        if (Utils.IsDate(hid.Attributes["value"]))
+                        {
+                            strFormat = "d";
+                            if (hid.Attributes["format"] != null)
+                            {
+                                strFormat = hid.Attributes["format"];
+                            }
+                            hid.Text = Utils.FormatToDisplay(hid.Text, Utils.GetCurrentCulture(), TypeCode.DateTime, strFormat);
+                        }
+                    }
+                }
+
+                if ((hid.Attributes["length"] != null))
+                {
+                    hid.Text = hid.Text.Substring(0, Convert.ToInt32(hid.Attributes["length"]));
+                }
+
             }
             catch (Exception)
             {
@@ -1147,62 +1179,78 @@ namespace NBrightCore.render
 
         private void ValueOfDataBinding(object sender, EventArgs e)
         {
+            // NOTE: Do not set Text = "", If we've assign a Text value in the template (or resourcekey) then use it as default. (unless Error)
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
+            lc.Visible = NBrightGlobal.IsVisible;
             try
             {
-                // check if we have any formatting to do
-                var strFormat = "";
-                var strFormatType = "";
-                var xPath = lc.Text;
-                if (lc.Text.ToLower().StartsWith("date:"))
-                {
-                    var strF = lc.Text.Split(':');
-                    if (strF.Length == 3)
+                lc.Visible = NBrightGlobal.IsVisible;
+                    // check if we have any formatting to do
+                    var strFormat = "";
+                    var strFormatType = "";
+                    var xPath = lc.Text;
+                    if (lc.Text.ToLower().StartsWith("date:"))
                     {
-                        strFormat = strF[1].Replace("**COLON**",":"); 
-                        strFormatType = "date";
-                        xPath = strF[2];                        
+                        var strF = lc.Text.Split(':');
+                        if (strF.Length == 3)
+                        {
+                            strFormat = strF[1].Replace("**COLON**", ":");
+                            strFormatType = "date";
+                            xPath = strF[2];
+                        }
                     }
-                }
-                if (lc.Text.ToLower().StartsWith("double:"))
-                {
-                    var strF = lc.Text.Split(':');
-                    if (strF.Length == 3)
+                    if (lc.Text.ToLower().StartsWith("double:"))
                     {
-                        strFormat = strF[1].Replace("**COLON**", ":");
-                        strFormatType = "double";
-                        xPath = strF[2];
+                        var strF = lc.Text.Split(':');
+                        if (strF.Length == 3)
+                        {
+                            strFormat = strF[1].Replace("**COLON**", ":");
+                            strFormatType = "double";
+                            xPath = strF[2];
+                        }
                     }
-                }
 
-                //Get Data
-                if (lc.Text.ToLower().StartsWith("databind:"))
-                {
-                    lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
-                }
-                else
-                {
-                    XmlNode nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xPath);
-                    if ((nod != null))
+                    if (lc.Text.ToLower().StartsWith("resxdata:"))
                     {
-                        lc.Text = XmlConvert.DecodeName(nod.InnerText);
+                        //Text data passed as resx, so display it.
+                        lc.Text = lc.Text.Replace("resxdata:", "");
                     }
                     else
                     {
-                        lc.Text = "";
+                        //Get Data or set to empty is no data exits
+                        if (container.DataItem != null)
+                        {
+                            if (lc.Text.ToLower().StartsWith("databind:"))
+                            {
+                                lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
+                            }
+                            else
+                            {
+                                XmlNode nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xPath);
+                                if ((nod != null))
+                                {
+                                    lc.Text = XmlConvert.DecodeName(nod.InnerText);
+                                }
+                                else
+                                {
+                                    lc.Text = "";
+                                }
+                            }
+                        }
+                        
                     }
-                }
+
 
                 //Do the formatting
-                if (strFormatType == "date")
-                {
-                    lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.DateTime, strFormat);
-                }
-                if (strFormatType == "double")
-                {
-                    lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.Double, strFormat);                    
-                }
+                    if (strFormatType == "date")
+                    {
+                        lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.DateTime, strFormat);
+                    }
+                    if (strFormatType == "double")
+                    {
+                        lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.Double, strFormat);
+                    }
 
             }
             catch (Exception)
@@ -1218,6 +1266,7 @@ namespace NBrightCore.render
 
             try
             {
+                lc.Visible = NBrightGlobal.IsVisible;
                 var xmlNod = GenXmlFunctions.GetGenXmLnode((string)DataBinder.Eval(container.DataItem, DatabindColumn), lc.Text);
                 lc.Text = "";
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
@@ -1253,6 +1302,7 @@ namespace NBrightCore.render
 
             try
             {
+                lc.Visible = NBrightGlobal.IsVisible;
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text =Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
@@ -1285,6 +1335,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
+                lc.Visible = NBrightGlobal.IsVisible;
                 var xmlDoc = new XmlDataDocument();
                 string testValue = "";
                 string display = "";
@@ -1341,6 +1392,26 @@ namespace NBrightCore.render
                     }                    
                 }
 
+                //check for alternate row
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["alternate"] != null)))
+                {
+                    testValue = xmlNod.Attributes["alternate"].InnerText.ToLower();
+                    dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, "RowCount"));
+
+                    if (Utils.IsNumeric(dataValue))
+                    {
+                        var rowcount = Convert.ToInt32(dataValue);
+                        if (rowcount % 2 == 0)
+                        {
+                            dataValue = "true";
+                        }
+                        else
+                        {
+                            dataValue = "false";
+                        }
+                   }
+                }
+
                 //get test value 
                 string output;
 				if (dataValue == testValue & roleValid)
@@ -1352,7 +1423,12 @@ namespace NBrightCore.render
                     output = displayElse;
                 }
 
-                lc.Text = output;
+                if (output == "{ON}") _isVisibleList.Add(true);
+                if (output == "{OFF}") _isVisibleList.Add(false);
+
+                if (_isVisibleList.Count > 0) NBrightGlobal.IsVisible = _isVisibleList[_isVisibleList.Count - 1];
+
+                if (NBrightGlobal.IsVisible && output != "{ON}") lc.Text = output;
 
             }
             catch (Exception)
@@ -1361,13 +1437,36 @@ namespace NBrightCore.render
             }
         }
 
+        private void EndTestOfDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+            //try
+            //{
+
+                NBrightGlobal.IsVisible = true;
+                if (_isVisibleList.Count > 1)
+                {
+                    _isVisibleList.RemoveAt(_isVisibleList.Count - 1);
+                    NBrightGlobal.IsVisible = _isVisibleList[_isVisibleList.Count - 1];
+                }
+
+                lc.Text = "";  //always display nothign for this, it just to stop testof state.
+            //}
+            //catch (Exception)
+            //{
+            //    lc.Text = "";
+            //}
+        }
+
+
         private void HtmlOfDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-
             try
             {
+                lc.Visible = NBrightGlobal.IsVisible;
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
@@ -1397,6 +1496,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)cmd.NamingContainer;
             try
             {
+                cmd.Visible = NBrightGlobal.IsVisible;
 
                 if (cmd.Text.ToLower().StartsWith("databind:"))
                 {
@@ -1441,6 +1541,13 @@ namespace NBrightCore.render
             }
         }
 
+
+        private static void LiteralDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            lc.Visible = NBrightGlobal.IsVisible;
+        }
+
         private static void GeneralDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
@@ -1448,7 +1555,8 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Text =Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text));
+                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text));
             }
             catch (Exception)
             {
@@ -1464,6 +1572,7 @@ namespace NBrightCore.render
 
             try
             {
+                rbl.Visible = NBrightGlobal.IsVisible;
                 string strValue;
                 if ((rbl.Attributes["databind"] != null))
                 {
@@ -1491,7 +1600,8 @@ namespace NBrightCore.render
 
             try
             {
-                var xmlNod = GenXmlFunctions.GetGenXmLnode(chk.ID, "checkboxlist",(string) DataBinder.Eval(container.DataItem, DatabindColumn));
+                chk.Visible = NBrightGlobal.IsVisible;
+                var xmlNod = GenXmlFunctions.GetGenXmLnode(chk.ID, "checkboxlist", (string)DataBinder.Eval(container.DataItem, DatabindColumn));
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
                 if (xmlNodeList != null)
                 {
@@ -1548,6 +1658,7 @@ namespace NBrightCore.render
 
             try
             {
+                chk.Visible = NBrightGlobal.IsVisible;
                 if ((chk.Attributes["databind"] != null))
                 {
                     chk.Checked = Convert.ToBoolean(Convert.ToString(DataBinder.Eval(container.DataItem, chk.Attributes["databind"])));
@@ -1571,6 +1682,7 @@ namespace NBrightCore.render
 
             try
             {
+                ddl.Visible = NBrightGlobal.IsVisible;
                 string strValue;
                 if ((ddl.Attributes["databind"] != null))
                 {
@@ -1611,6 +1723,8 @@ namespace NBrightCore.render
 
             try
             {
+                txt.Visible = NBrightGlobal.IsVisible;
+                if (txt.Width == 0) txt.Visible = false; // always hide if we have a width of zero.
                 if ((txt.Attributes["databind"] != null))
                 {
                     txt.Text = Convert.ToString(DataBinder.Eval(container.DataItem, txt.Attributes["databind"]));
@@ -1690,7 +1804,7 @@ namespace NBrightCore.render
 				}
 			}
 			return xmlNod;
-		}
+		}        
 
         #endregion
 

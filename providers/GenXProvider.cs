@@ -9,7 +9,7 @@ namespace NBrightCore.providers
     public abstract class GenXProvider : ProviderBase
     {
 
-        public abstract bool CreateGenControl(string ctrltype, Control container, XmlNode xmlNod, string rootname = "genxml", string databindColum = "XMLData");
+        public abstract bool CreateGenControl(string ctrltype, Control container, XmlNode xmlNod, string rootname = "genxml", string databindColum = "XMLData", string cultureCode = "");
 
         public abstract string GetField(Control ctrl);
 
