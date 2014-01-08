@@ -2,25 +2,45 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using NBrightCore.common;
 
 namespace NBrightCore.images
 {
     public class ImgUtils
     {
-        private static ImageCodecInfo GetEncoder(ImageFormat format)
+        public static ImageCodecInfo GetEncoder(ImageFormat format)
         {
+            string mimeType = "image/x-unknown";
 
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
-
-            foreach (ImageCodecInfo codec in codecs)
+            if (format.Equals(ImageFormat.Gif))
             {
-                if (codec.FormatID == format.Guid)
-                {
-                    return codec;
-                }
+                mimeType = "image/gif";
             }
-            return null;
+            else if (format.Equals(ImageFormat.Jpeg))
+            {
+                mimeType = "image/jpeg";
+            }
+            else if (format.Equals(ImageFormat.Png))
+            {
+                mimeType = "image/png";
+            }
+            else if (format.Equals(ImageFormat.Bmp) || format.Equals(ImageFormat.MemoryBmp))
+            {
+                mimeType = "image/bmp";
+            }
+            else if (format.Equals(ImageFormat.Tiff))
+            {
+                mimeType = "image/tiff";
+            }
+            else if (format.Equals(ImageFormat.Icon))
+            {
+                mimeType = "image/x-icon";
+            }
+
+            ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
+            ImageCodecInfo e = encoders.FirstOrDefault(x => x.MimeType == mimeType);
+            return e;
         }
 
         // Bitmap bytes have to be created via a direct memory copy of the bitmap

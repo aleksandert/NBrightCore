@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
@@ -19,9 +20,9 @@ namespace NBrightCore.render
         protected string DatabindColumn = "XMLData";
         protected Page CurrentPage;
         protected string EditCultureCode = "";
+        protected Dictionary<string, string> Settings;
         private Dictionary<string, string> hiddenFields;
 		private string _ResourcePath = "";
-        private List<bool> _isVisibleList;
         
         public String GetHiddenFieldValue(string Key)
         {
@@ -39,15 +40,11 @@ namespace NBrightCore.render
             
         }
 
-        public GenXmlTemplate(string templateText): this(templateText, "genxml", "XMLData", "")
+        public GenXmlTemplate(string templateText, Dictionary<string, string> settings): this(templateText, "genxml", "XMLData", "", settings)
         {
         }
 
-        public GenXmlTemplate(string templateText, string xmlRootName): this(templateText, xmlRootName, "XMLData","")
-        {
-        }
-
-        public GenXmlTemplate(string templateText, string xmlRootName, string dataBindXmlColumn, string cultureCode)
+        public GenXmlTemplate(string templateText, string xmlRootName = "genxml", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null)
         {
             //set the rootname of the xml, this allows for compatiblity with legacy xml structure
             Rootname = xmlRootName;
@@ -56,6 +53,7 @@ namespace NBrightCore.render
             MetaTags = new List<string>();
             hiddenFields = new Dictionary<string, string>();
             EditCultureCode = cultureCode;
+            Settings = settings;
 
             // find any meta tags
             var xmlDoc = new XmlDocument();
@@ -68,29 +66,39 @@ namespace NBrightCore.render
                         var strXml = System.Web.HttpUtility.HtmlDecode(s);
                         strXml = "<root>" + strXml + "</root>";
 
-                        xmlDoc.LoadXml(strXml);
-                        var xmlNod = xmlDoc.SelectSingleNode("root/tag");
-                        if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["type"] != null)))
+                        try
                         {
-                            ctrltype = xmlNod.Attributes["type"].InnerXml.ToLower();
-                        }
+                            xmlDoc.LoadXml(strXml);
+                            var xmlNod = xmlDoc.SelectSingleNode("root/tag");
+                            if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["type"] != null)))
+                            {
+                                ctrltype = xmlNod.Attributes["type"].InnerXml.ToLower();
+                            }
 
-                        if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["ctrltype"] != null)))
-                        {
-                            ctrltype = xmlNod.Attributes["ctrltype"].InnerXml.ToLower();
-                        }
+                            if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["ctrltype"] != null)))
+                            {
+                                ctrltype = xmlNod.Attributes["ctrltype"].InnerXml.ToLower();
+                            }
 
-                        if (ctrltype == "meta" | ctrltype == "const")  //also add const to meta tag list
+                            if (ctrltype == "meta" | ctrltype == "const" | ctrltype == "action")  //also add const to meta tag list
+                            {
+                                MetaTags.Add(s);
+                                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["id"] != null)))
+                                {
+                                    // add these to hidden fields before the dtabind, so we can pick them up on poatback
+                                    if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
+
+                                    if (xmlNod.Attributes["id"].Value.ToLower() == "resourcepath")
+                                    {
+                                        _ResourcePath = xmlNod.Attributes["value"].Value;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception)
                         {
-                            MetaTags.Add(s);
-							if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["id"] != null)))
-							{
-								if (xmlNod.Attributes["id"].Value.ToLower() == "resourcepath")
-								{
-									_ResourcePath = xmlNod.Attributes["value"].Value;
-								}
-							}
-						}
+                            // Might be an eror in the template, but we don;t want to find an error here, just skip it so we get a nasty erro messgae appearing later! 
+                        }
 
                     }
             }
@@ -123,8 +131,7 @@ namespace NBrightCore.render
         /// </summary>
         public void InstantiateIn(Control container)
         {
-            _isVisibleList = new List<bool>();
-            NBrightGlobal.IsVisible = true;
+            NBrightGlobal.IsVisibleList = new List<bool>();
 
             if (CurrentPage != null)
             {
@@ -143,6 +150,7 @@ namespace NBrightCore.render
                     if (htmlDecode != null && htmlDecode.ToLower().StartsWith("<tag"))
                     {
                         var strXml = System.Web.HttpUtility.HtmlDecode(AryTempl[lp]);
+                        strXml = strXml.Replace("&", "&amp;"); // escape to stop any error. can create a issue if we really need only (&)
                         strXml = "<root>" + strXml + "</root>";
 
                         xmlDoc.LoadXml(strXml);
@@ -177,6 +185,9 @@ namespace NBrightCore.render
                                 case "translatebutton":
                                     CreateTransButton(container, xmlNod);
                                     break;
+                                case "assignof":
+                                    CreateAssignOf(container, xmlNod);
+                                    break;
                                 case "valueof":
                                     CreateValueOf(container, xmlNod);
                                     break;
@@ -195,6 +206,12 @@ namespace NBrightCore.render
                                 case "htmlof":
                                     CreateHtmlOf(container, xmlNod);
                                     break;
+                                case "decodeof":
+                                    CreateHtmlOf(container, xmlNod);
+                                    break;
+                                case "encodeof":
+                                    CreateEncodeOf(container, xmlNod);
+                                    break;
                                 case "label":
                                     CreateLabel(container, xmlNod);
                                     break;
@@ -202,14 +219,17 @@ namespace NBrightCore.render
                                     CreateHidden(container, xmlNod);
                                     if ((xmlNod != null) && (xmlNod.Attributes != null) && (xmlNod.Attributes["id"] != null) && (xmlNod.Attributes["value"] != null))
                                     {
-                                            if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].InnerXml.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].InnerXml.ToLower(), xmlNod.Attributes["value"].InnerXml);
+                                            if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
                                     }
+                                    break;
+                                case "postback":
+                                    CreatePostBack(container, xmlNod);
                                     break;
                                 case "const":
                                     CreateConst(container, xmlNod);
                                     if ((xmlNod != null) && (xmlNod.Attributes != null) && (xmlNod.Attributes["id"] != null) && (xmlNod.Attributes["value"] != null))
                                     {
-                                        if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].InnerXml.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].InnerXml.ToLower(), xmlNod.Attributes["value"].InnerXml);
+                                        if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
                                     }
                                     break;
                                 case "textbox":
@@ -245,9 +265,16 @@ namespace NBrightCore.render
                                 case "meta":
                                     if ((xmlNod != null) && (xmlNod.Attributes != null) && (xmlNod.Attributes["id"] != null) && (xmlNod.Attributes["value"] != null))
                                     {
-                                        if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].InnerXml.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].InnerXml.ToLower(), xmlNod.Attributes["value"].InnerXml);
+                                        if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
                                     }
                                     // meta tags are for passing data to the system only and should not be displayed. (e.g. orderby field)
+                                    break;
+                                case "action":
+                                    if ((xmlNod != null) && (xmlNod.Attributes != null) && (xmlNod.Attributes["id"] != null) && (xmlNod.Attributes["value"] != null))
+                                    {
+                                        if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
+                                    }
+                                    // action tags are for passing data to the system only and should not be displayed.
                                     break;
                                 case "itemindex":
                                     if (container.GetType() == typeof(RepeaterItem))
@@ -267,7 +294,7 @@ namespace NBrightCore.render
                                     {                                    
                                         foreach (var prov in providerList)
                                         {
-                                            providerCtrl = prov.Value.CreateGenControl(ctrltype, container, xmlNod, Rootname, DatabindColumn, EditCultureCode);
+                                            providerCtrl = prov.Value.CreateGenControl(ctrltype, container, xmlNod, Rootname, DatabindColumn, EditCultureCode, Settings);
                                             if (providerCtrl)
                                             {
                                                 break;
@@ -349,6 +376,24 @@ namespace NBrightCore.render
             container.Controls.Add(lc);
         }
 
+        private void CreateAssignOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal();
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null))
+            {
+                lc.Text = xmlNod.Attributes["xpath"].InnerXml;
+            }
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null))
+            {
+                lc.Text = "databind:" + xmlNod.Attributes["databind"].InnerXml;
+            }
+
+            lc.DataBinding += AssignOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
         private void CreateBreakOf(Control container, XmlNode xmlNod)
         {
             var lc = new Literal();
@@ -406,6 +451,21 @@ namespace NBrightCore.render
             container.Controls.Add(lc);
         }
 
+        private void CreateEncodeOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal();
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null))
+            {
+                lc.Text = xmlNod.Attributes["xpath"].InnerXml;
+            }
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null))
+            {
+                lc.Text = "databind:" + xmlNod.Attributes["databind"].InnerXml;
+            }
+            lc.DataBinding += EncodeOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
         private void CreateRadioButtonList(Control container, XmlNode xmlNod)
         {
             var rbl = new RadioButtonList();
@@ -428,16 +488,19 @@ namespace NBrightCore.render
             }
             if (xmlNod.Attributes != null && (xmlNod.Attributes["data"] != null))
             {
+                var xmldata = HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml);
+
                 string[] strListValue;
                 if ((xmlNod.Attributes["datavalue"] != null))
                 {
-                    strListValue = xmlNod.Attributes["datavalue"].InnerXml.Split(';');
+                    var xmldatavalue = HttpUtility.HtmlDecode(xmlNod.Attributes["datavalue"].InnerXml);
+                    strListValue = xmldatavalue.Split(';');
                 }
                 else
                 {
-                    strListValue = xmlNod.Attributes["data"].InnerXml.Split(';');
+                    strListValue = xmldata.Split(';');
                 }
-                var strList = xmlNod.Attributes["data"].InnerXml.Split(';');
+                var strList = xmldata.Split(';');
                 for (var lp = 0; lp <= strList.GetUpperBound(0); lp++)
                 {
                     var li = new ListItem();
@@ -483,16 +546,19 @@ namespace NBrightCore.render
 
             if (xmlNod.Attributes != null && (xmlNod.Attributes["data"] != null))
             {
+                var xmldata = HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml);
+
                 string[] strListValue;
-                if ((xmlNod.Attributes["datavalue"] != null))
+                if (xmlNod.Attributes["datavalue"] != null)
                 {
-                    strListValue = xmlNod.Attributes["datavalue"].InnerXml.Split(';');
+                    var xmldatavalue = HttpUtility.HtmlDecode(xmlNod.Attributes["datavalue"].InnerXml);
+                    strListValue = xmldatavalue.Split(';');
                 }
                 else
                 {
-                    strListValue = xmlNod.Attributes["data"].InnerXml.Split(';');
+                    strListValue = xmldata.Split(';');
                 }
-                string[] strList = xmlNod.Attributes["data"].InnerXml.Split(';');
+                var strList = xmldata.Split(';');
                 for (int lp = 0; lp <= strList.GetUpperBound(0); lp++)
                 {
                     var li = new ListItem();
@@ -638,13 +704,13 @@ namespace NBrightCore.render
                 string[] strListValue;
                 if ((xmlNod.Attributes["datavalue"] != null))
                 {
-                    strListValue = xmlNod.Attributes["datavalue"].InnerXml.Split(';');
+                    strListValue = HttpUtility.HtmlDecode(xmlNod.Attributes["datavalue"].InnerXml).Split(';');
                 }
                 else
                 {
-                    strListValue = xmlNod.Attributes["data"].InnerXml.Split(';');
+                    strListValue =  HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml).Split(';');
                 }
-                var strList = xmlNod.Attributes["data"].InnerXml.Split(';');
+                var strList =  HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml).Split(';');
                 for (var lp = 0; lp <= strList.GetUpperBound(0); lp++)
                 {
                     var li = new ListItem();
@@ -835,6 +901,26 @@ namespace NBrightCore.render
             container.Controls.Add(hidInfo);
         }
 
+        private static HiddenField GetPostBackCtrl(XmlNode xmlNod)
+        {
+            var hid = new HiddenField();
+            if (xmlNod.Attributes != null)
+            {
+                if ((xmlNod.Attributes["id"] != null))
+                {
+                    hid.ID = xmlNod.Attributes["id"].InnerXml.ToLower();
+                }
+
+                if ((xmlNod.Attributes["value"] != null))
+                {
+                    hid.Value = xmlNod.Attributes["value"].InnerXml;
+                }
+            }
+
+            return hid;
+        }
+
+
         private static HtmlGenericControl GetHiddenFieldCtrl(XmlNode xmlNod)
         {
             var hid = new HtmlGenericControl("input");
@@ -991,6 +1077,18 @@ namespace NBrightCore.render
         private static void CreateConst(Control container, XmlNode xmlNod)
         {
             var hid = GetHiddenFieldCtrl(xmlNod);
+            container.Controls.Add(hid);
+        }
+
+        /// <summary>
+        /// This control is a asp hiddenfield, this allows a postback value to be returned to the server.
+        /// The normal "hidden" type control in NBrightCore is a HtmlGenericField, which does not allow for a postback, when data is set by JS or JQuery.
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="xmlNod"></param>
+        private void CreatePostBack(Control container, XmlNode xmlNod)
+        {
+            var hid = GetPostBackCtrl(xmlNod);
             container.Controls.Add(hid);
         }
 
@@ -1259,6 +1357,45 @@ namespace NBrightCore.render
             }
         }
 
+        private void AssignOfDataBinding(object sender, EventArgs e)
+        {
+            // Output data, but eacape "'" to "&apos;", this is so string values can be assign in javascript.
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+            lc.Visible = NBrightGlobal.IsVisible;
+            try
+            {
+                lc.Visible = NBrightGlobal.IsVisible;
+                // check if we have any formatting to do
+                var xPath = lc.Text;
+                //Get Data or set to empty is no data exits
+                if (container.DataItem != null)
+                {
+                    if (lc.Text.ToLower().StartsWith("databind:"))
+                    {
+                        lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
+                    }
+                    else
+                    {
+                        XmlNode nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xPath);
+                        if ((nod != null))
+                        {
+                            lc.Text = XmlConvert.DecodeName(nod.InnerText);
+                            if (lc.Text != null) lc.Text = lc.Text.Replace("'", "&apos;");
+                        }
+                        else
+                        {
+                            lc.Text = "";
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                lc.Text = "";
+            }
+        }
+
         private void ChkBoxListOfDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
@@ -1346,10 +1483,27 @@ namespace NBrightCore.render
                 xmlDoc.LoadXml("<root>" + lc.Text + "</root>");
                 var xmlNod = xmlDoc.SelectSingleNode("root/tag");
 
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["settings"] != null)))
+                {
+                    dataValue = xmlNod.Attributes["settings"].InnerXml;
+                    if (Settings != null && Settings.ContainsKey(dataValue)) dataValue = Settings[dataValue];
+                }
+
                 if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["testvalue"] != null)))
                 {
                     testValue = xmlNod.Attributes["testvalue"].InnerXml;
+                    if (testValue.ToLower()=="{username}") testValue = providers.CmsProviderManager.Default.GetCurrentUserName();
+                    if (testValue.ToLower() == "{userid}") testValue = providers.CmsProviderManager.Default.GetCurrentUserId().ToString("");
+                    if (Settings != null)
+                    {
+                        if (testValue.ToLower().StartsWith("settings:"))
+                        {
+                            var setkey = testValue.Replace("Settings:", "").Replace("settings:", "");
+                            if (Settings.ContainsKey(setkey)) testValue = Settings[setkey];
+                        }
+                    }
                 }
+
                 if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["testinrole"] != null)))
                 {
                     var testRole = xmlNod.Attributes["testinrole"].InnerXml;
@@ -1364,9 +1518,15 @@ namespace NBrightCore.render
                 {
                     display = xmlNod.Attributes["display"].InnerXml;
                 }
-                if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["displayelse"] != null)))
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["displayelse"] != null)))
                 {
                     displayElse = xmlNod.Attributes["displayelse"].InnerXml;
+                }
+                else
+                {
+                    if (display == "{ON}") displayElse = "{OFF}";
+                    if (display == "{OFF}") displayElse = "{ON}";
                 }
 
 				if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null)))
@@ -1414,7 +1574,7 @@ namespace NBrightCore.render
 
                 //get test value 
                 string output;
-				if (dataValue == testValue & roleValid)
+				if ((dataValue == testValue) & roleValid)
                 {
                     output = display;
                 }
@@ -1423,13 +1583,20 @@ namespace NBrightCore.render
                     output = displayElse;
                 }
 
-                if (output == "{ON}") _isVisibleList.Add(true);
-                if (output == "{OFF}") _isVisibleList.Add(false);
-
-                if (_isVisibleList.Count > 0) NBrightGlobal.IsVisible = _isVisibleList[_isVisibleList.Count - 1];
+                // If the Visible flag is OFF then keep it off, even if the child test is true
+                // This allows nested tests to function correctly, by using the parent result.
+                if (!NBrightGlobal.IsVisible) 
+                {
+                    if (output == "{ON}" | output == "{OFF}") NBrightGlobal.IsVisibleList.Add(false); // only add level on {} testof
+                }
+                else
+                {
+                    if (output == "{ON}") NBrightGlobal.IsVisibleList.Add(true);
+                    if (output == "{OFF}") NBrightGlobal.IsVisibleList.Add(false);
+                }
 
                 if (NBrightGlobal.IsVisible && output != "{ON}") lc.Text = output;
-
+                if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
             }
             catch (Exception)
             {
@@ -1441,22 +1608,8 @@ namespace NBrightCore.render
         {
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            //try
-            //{
-
-                NBrightGlobal.IsVisible = true;
-                if (_isVisibleList.Count > 1)
-                {
-                    _isVisibleList.RemoveAt(_isVisibleList.Count - 1);
-                    NBrightGlobal.IsVisible = _isVisibleList[_isVisibleList.Count - 1];
-                }
-
-                lc.Text = "";  //always display nothign for this, it just to stop testof state.
-            //}
-            //catch (Exception)
-            //{
-            //    lc.Text = "";
-            //}
+            if (NBrightGlobal.IsVisibleList.Count > 0) NBrightGlobal.IsVisibleList.RemoveAt(NBrightGlobal.IsVisibleList.Count - 1);
+            lc.Text = "";  //always display nothign for this, it just to stop testof state.
         }
 
 
@@ -1489,6 +1642,37 @@ namespace NBrightCore.render
                 lc.Text = "";
             }
         }
+
+        private void EncodeOfDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+            try
+            {
+                lc.Visible = NBrightGlobal.IsVisible;
+                if (lc.Text.ToLower().StartsWith("databind:"))
+                {
+                    lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
+                }
+                else
+                {
+                    var nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), lc.Text);
+                    if ((nod != null))
+                    {
+                        lc.Text = System.Web.HttpUtility.HtmlEncode(nod.InnerText);
+                    }
+                    else
+                    {
+                        lc.Text = "";
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                lc.Text = "";
+            }
+        }
+
 
         private void LinkButtonDataBinding(object sender, EventArgs e)
         {
@@ -1626,7 +1810,7 @@ namespace NBrightCore.render
                                 if (string.IsNullOrEmpty(findName))
                                 {
                                     findName = xmlNoda.InnerText;
-                                    if ((chk.Items.FindByText(findName).Value != null))
+                                    if ((chk.Items.FindByText(findName) != null && chk.Items.FindByText(findName).Value != null))
                                     {
                                         chk.Items.FindByText(findName).Selected =
                                             Convert.ToBoolean(xmlNoda.Attributes["value"].Value);
@@ -1634,7 +1818,7 @@ namespace NBrightCore.render
                                 }
                                 else
                                 {
-                                    if ((chk.Items.FindByValue(findName).Value != null))
+                                    if ((chk.Items.FindByText(findName) != null && chk.Items.FindByValue(findName).Value != null))
                                     {
                                         chk.Items.FindByValue(findName).Selected =
                                             Convert.ToBoolean(xmlNoda.Attributes["value"].Value);

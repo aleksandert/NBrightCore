@@ -272,11 +272,8 @@ namespace NBrightCore.render
                                     }
                                 }
 
-                                //place language at front of filename.
-                                if (lang != "")
-                                {
-                                    strGuid = lang + "_" + strGuid;
-                                }
+                                //place language at front of filename. (Friendly names don;t support langauge)
+                                if (lang != "" & !String.IsNullOrEmpty(strFriendlyName)) strGuid = lang + "_" + strGuid;
 
                                 var newFileName = folderMapPath.TrimEnd(Convert.ToChar("\\")) + "\\" + strGuid;
                                 fup.SaveAs(newFileName);
@@ -354,7 +351,10 @@ namespace NBrightCore.render
                 else
                 {
                     //rename the friendlyname so we don;t get a lock on resize.
-                    strGUIDJPG = "gen_" + friendlyFileName;
+                    strGUIDJPG = friendlyFileName;
+                    newFileName = Path.GetDirectoryName(newFileName) + "\\gen_" + Path.GetFileName(newFileName);
+                    File.Move(originalFileName, newFileName);
+                    originalFileName = newFileName; // rename orignal so we delete the correct img at the end.
                 }
             }
 
@@ -914,6 +914,7 @@ namespace NBrightCore.render
             var chkCtrls = new List<Control>();
             var txtCtrls = new List<Control>();
             var hidCtrls = new List<Control>();
+            var hidfieldCtrls = new List<Control>();
             var fupCtrls = new List<Control>();
             var chkboxCtrls = new List<Control>();
             var genCtrls = new List<Control>();
@@ -952,6 +953,10 @@ namespace NBrightCore.render
                         var c = (HtmlGenericControl) ctrl;
                         lang = c.Attributes["value"];
                     }
+                }
+                else if (ctrl is HiddenField)
+                {
+                    hidfieldCtrls.Add(ctrl);
                 }
                 else if (ctrl is FileUpload)
                 {
@@ -1027,6 +1032,39 @@ namespace NBrightCore.render
                     {
                         strXml += "<" + hidCtrl.ID.ToLower() + "><![CDATA[";
                         strXml += hidCtrl.Attributes["value"];
+                    }
+                    strXml += "]]></" + hidCtrl.ID.ToLower() + ">";
+                }
+            }
+            foreach (HiddenField hidCtrl in hidfieldCtrls)  //deal with true hidden field for postback.
+            {
+                if (!String.IsNullOrEmpty(originalXml))
+                {
+                    if (hidCtrl.ID.ToLower().StartsWith("dbl"))
+                    {
+                        ReplaceXmlNode(xmlDoc, xmlRootName + "/hidden/" + hidCtrl.ID.ToLower(), Utils.FormatToSave(hidCtrl.Value, TypeCode.Double));
+                    }
+                    else
+                    {
+                        ReplaceXmlNode(xmlDoc, xmlRootName + "/hidden/" + hidCtrl.ID.ToLower(), Utils.FormatToSave(hidCtrl.Value));
+                    }
+                }
+                else
+                {
+                    if (hidCtrl.ID.ToLower().StartsWith("dbl"))
+                    {
+                        strXml += "<" + hidCtrl.ID.ToLower() + " datatype=\"double\"><![CDATA[";
+                        strXml += Utils.FormatToSave(hidCtrl.Value, TypeCode.Double);
+                    }
+                    else if (hidCtrl.ID.ToLower().StartsWith("dte"))
+                    {
+                        strXml += "<" + hidCtrl.ID.ToLower() + " datatype=\"date\"><![CDATA[";
+                        strXml += Utils.FormatToSave(hidCtrl.Value, TypeCode.DateTime);
+                    }
+                    else
+                    {
+                        strXml += "<" + hidCtrl.ID.ToLower() + "><![CDATA[";
+                        strXml += hidCtrl.Value;
                     }
                     strXml += "]]></" + hidCtrl.ID.ToLower() + ">";
                 }
@@ -1134,7 +1172,12 @@ namespace NBrightCore.render
                 else
                 {
                     strXml += "<" + chkboxCtrl.ID.ToLower() + "><![CDATA[";
-                    strXml += chkboxCtrl.Checked.ToString(CultureInfo.InvariantCulture);
+                    // hard code "True" and "False", this is to make sure we have a constant across languages for testof.
+                    // I know this should be done by using CultureInfo, but I'm unable to test that on different language servers and this is sure to work!
+                    if (chkboxCtrl.Checked)
+                        strXml += "True";
+                    else
+                        strXml += "False";
                     strXml += "]]></" + chkboxCtrl.ID.ToLower() + ">";
                 }
             }
@@ -1205,13 +1248,18 @@ namespace NBrightCore.render
                 }
                 foreach (ListItem lItem in chkCtrl.Items)
                 {
+                    // hard code "True" and "False", this is to make sure we have a constant across languages for testof.
+                    // I know this should be done by using CultureInfo, but I'm unable to test that on different language servers and this is sure to work!
+                    var strVal = "False";
+                    if (lItem.Selected) strVal = "True";
+
                     if (!String.IsNullOrEmpty(originalXml))
                     {
-                        ReplaceXmLatt(xmlDoc, xmlRootName + "/checkboxlist/" + chkCtrl.ID.ToLower() + "/chk[.='" + Utils.FormatToSave(lItem.Text) + "']", Convert.ToString(lItem.Selected));
+                        ReplaceXmLatt(xmlDoc, xmlRootName + "/checkboxlist/" + chkCtrl.ID.ToLower() + "/chk[.='" + Utils.FormatToSave(lItem.Text) + "']", strVal);
                     }
                     else
                     {
-                        strXml += "<chk value=\"" + lItem.Selected + "\" data=\"" + lItem.Value + "\" >";
+                        strXml += "<chk value=\"" + strVal + "\" data=\"" + lItem.Value + "\" >";
                         if (dataTyp.ToLower() == "double")
                         {
                             strXml += "<![CDATA[" + Utils.FormatToSave(lItem.Text, TypeCode.Double) + "]]>";
@@ -2275,9 +2323,36 @@ namespace NBrightCore.render
             return strOut;
         }
 
-        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "")
+        /// <summary>
+        /// Render reporter with templates already assigned.
+        /// </summary>
+        /// <param name="rpData">Repeater to be rendered</param>
+        /// <param name="objInfo">Data object, if null then it is assumed the repeater already have the data assigned.</param>
+        /// <returns></returns>
+        public static string RenderRepeater(Repeater rpData, object objInfo = null)
         {
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode) };
+            if (objInfo != null)
+            {
+                var arylist = new ArrayList();
+                arylist.Add(objInfo);
+                rpData.DataSource = arylist;                
+            }
+
+            rpData.DataBind();
+
+            //Get the rendered HTML
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            var htmlTw = new HtmlTextWriter(sw);
+            rpData.RenderControl(htmlTw);
+
+            return sb.ToString();
+        }
+
+
+        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "",Dictionary<string, string> settings = null)
+        {
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings) };
 
             dlGen.DataSource = objList;
             dlGen.DataBind();
@@ -2291,10 +2366,10 @@ namespace NBrightCore.render
             return sb.ToString();
         }
 
-        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "")
+        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null)
         {
             var arylist = new ArrayList();
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode) };
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings) };
 
             arylist.Add(objInfo);
 
@@ -2493,22 +2568,27 @@ namespace NBrightCore.render
             return GetSqlOrderByWithValue(orderValue);
         }
 
-        public static string GetSqlOrderBy(string TemplateText)
+        public static string GetSqlOrderBy(string TemplateText, String orderByIndexValue = "")
+        {
+            // static orderby can be passed as a template meta tag, so search for orderby tag.
+            var objTempl = new GenXmlTemplate(TemplateText);
+            return GetSqlOrderBy(objTempl, orderByIndexValue);
+        }
+
+        public static string GetSqlOrderBy(GenXmlTemplate Template, String orderByIndexValue = "")
         {
             var orderValue = "";
             // static orderby can be passed as a template meta tag, so search for orderby tag.
-            var objTempl = new GenXmlTemplate(TemplateText);
+            foreach (var mt in Template.MetaTags)
             {
-                foreach (var mt in objTempl.MetaTags)
+                var orderId = GenXmlFunctions.GetGenXmlValue(mt, "tag/@id");
+                if (orderId.ToLower().StartsWith("orderby" + orderByIndexValue))
                 {
-                    var orderId = GenXmlFunctions.GetGenXmlValue(mt, "tag/@id");
-                    if (orderId.ToLower().StartsWith("orderby"))
-                    {
-                        orderValue = GenXmlFunctions.GetGenXmlValue(mt, "tag/@value");
-                    }
+                    orderValue = GenXmlFunctions.GetGenXmlValue(mt, "tag/@value");
+                    return GetSqlOrderByWithValue(orderValue);
                 }
             }
-            return GetSqlOrderByWithValue(orderValue);
+            return "";
         }
 
         private static string GetSqlOrderByWithValue(string orderValue)
@@ -2528,9 +2608,27 @@ namespace NBrightCore.render
 
                     for (int i = 0; i < xpath.Length; i++)
                     {
-                        strOut += "[" + dataField[i] + "].value('(" + xpath[i];
-                        strOut += ")[1]', '" + sqlType[i].Replace('.', ','); // use the . for the decimal(10,2) formatting in template, so we don;t clash on the Split. decimal(10.2) ---> decimal(10,2)
-                        strOut += "') " + orderSeq[i];
+                        var orgSqlType = "";
+                        if (sqlType[i].StartsWith("int") | sqlType[i].StartsWith("bigint") | sqlType[i].StartsWith("smallint") | sqlType[i].StartsWith("tinyint") | sqlType[i].StartsWith("decimal"))
+                        {
+                            //OMG - we've got a numeric...fine, but what if the data is not in the correct format, we need to convert the XML as nvarchar and then wrap the dam thing in a isnumeric test!!!
+                            // NOTE: Isnumeric return ture for chars "$,.+-" (which is not perhaps a totally bad thing for us!)
+                            orgSqlType = sqlType[i].Replace('.', ','); // use the . for the decimal(10,2) formatting in template, so we don;t clash on the Split. decimal(10.2) ---> decimal(10,2)
+                            sqlType[i] = "nvarchar(50)";
+                        }
+                        var strThis = "";
+                        strThis += "[" + dataField[i] + "].value('(" + xpath[i];
+                        strThis += ")[1]', '" + sqlType[i];
+                        strThis += "') ";
+
+                        if (orgSqlType != "")
+                        {
+                            //OK damit..we've got a numeric, lets write some ugly SQL!
+                            strThis = " convert(" + orgSqlType + ",(select case when isnumeric(isnull(" + strThis + ",'0')) = 1 then isnull(" + strThis + ",'0') else '0' end))";
+                        }
+
+                        strOut += strThis + orderSeq[i];
+
                         if (i < (xpath.Length - 1))
                         {
                             strOut += ", ";
@@ -2548,6 +2646,36 @@ namespace NBrightCore.render
                 return strOut;
             }
             return "";
+        }
+
+        public static string GetSqlFilterRange(string xpath, string sqlType, string searchFrom, string searchTo, string dataField = "XMLData")
+        {
+            var strOut = "";
+
+            //remove SQL injection
+            searchFrom = searchFrom.Replace("\'", "''");
+            searchTo = searchTo.Replace("\'", "''");
+
+            strOut += "( ([" + dataField + "].value('(" + xpath;
+            strOut += ")[1]', '" + sqlType;
+            if (sqlType=="datetime")
+                strOut += "') >= convert(datetime,'" + searchFrom + "') ";
+            else
+                strOut += "') >= '" + searchFrom + Convert.ToChar("'");                
+
+            strOut += ") and ";
+            strOut += "([" + dataField + "].value('(" + xpath;
+            strOut += ")[1]', '" + sqlType;
+            if (sqlType == "datetime")
+                strOut += "') <= convert(datetime,'" + searchTo + "') ";
+            else
+                strOut += "') <= '" + searchTo + Convert.ToChar("'");
+            strOut += ") )";
+
+            //remove possible SQL injection commands
+            strOut = StripSqlCommands(strOut);
+
+            return strOut;
         }
 
         public static string GetSqlFilterText(string xpath, string sqlType, string searchText, string dataField = "XMLData")
@@ -2577,7 +2705,7 @@ namespace NBrightCore.render
 
             strOut += "([" + dataField + "].value('(" + xpath;
             strOut += ")[1]', '" + sqlType;
-            strOut += "') collate Latin1_General_CI_AI LIKE '%" + searchText + "%'";
+            strOut += "') LIKE '%" + searchText + "%'";
             strOut += ")";
 
             //remove possible SQL injection commands

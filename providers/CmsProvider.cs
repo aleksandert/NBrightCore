@@ -9,6 +9,10 @@ namespace NBrightCore.providers
     public abstract class CmsProvider : ProviderBase
     {
 
+        public abstract int GetCurrentUserId();
+
+        public abstract string GetCurrentUserName();
+
         public abstract bool IsInRole(string testRole);
 
         public abstract string HomeMapPath();

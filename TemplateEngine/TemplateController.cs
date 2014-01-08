@@ -261,12 +261,12 @@ namespace NBrightCore.TemplateEngine
 
         public void SaveTemplate(string templatename, string lang, string templatedata)
         {
-            var langpath = string.Format("{0}\\{1}\\", TemplateMapPath, lang);
+            var langpath = string.Format("{0}\\{1}\\", TemplateMapPath.TrimEnd('\\'), lang);
             if (!Directory.Exists(langpath))
             {
                 Directory.CreateDirectory(langpath);
             }
-            var templatepath = string.Format("{0}\\{1}\\{2}", TemplateMapPath, lang, templatename);
+            var templatepath = string.Format("{0}\\{1}\\{2}", TemplateMapPath.TrimEnd('\\'), lang, templatename);
             var objT = new Template(templatepath);
             objT.Save(templatedata);
         }

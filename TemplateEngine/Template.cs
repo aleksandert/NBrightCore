@@ -16,7 +16,7 @@ namespace NBrightCore.TemplateEngine
         // Constructor
         public Template(string templatepath)
         {
-            TemplateData = "NO TEMPLATE DATA";
+            TemplateData = "";
             IsTemplateFound = false;
             _templatePath = templatepath;
             if (templatepath != null)
@@ -82,7 +82,7 @@ namespace NBrightCore.TemplateEngine
                     }
                     else
                     {
-                        TemplateData = string.Format("NO TEMPLATE FOUND ({0})", TemplateName);
+                        TemplateData = "";
                     }
                 }
                 catch (Exception)

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Web;
@@ -806,11 +807,24 @@ namespace NBrightCore
     public static class NBrightGlobal
     {
         /// <summary>
-        /// This global boolean is used to display controls during the daa binding process.
+        /// This global boolean is used to display controls during the data binding process.
+        /// </summary>
+        public static bool IsVisible
+        {
+            get
+            {
+                if (NBrightGlobal.IsVisibleList.Count > 0) return IsVisibleList[IsVisibleList.Count - 1];
+                return true;
+            }
+        }
+        /// <summary>
+        /// List of nested visible flags for NBright testof tokens
         /// It need to be gloabl so providers can use it.
         /// It is set in the "GenXmlTemplate" by the "testof" and "endtestof" tag tokens
         /// </summary>
-        public static bool IsVisible { get; set; }
+        public static List<bool> IsVisibleList;
+
     }
+
 
 }

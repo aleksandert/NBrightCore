@@ -508,16 +508,24 @@ namespace NBrightCore.common
             CmsProviderManager.Default.RemoveCache(strCacheKey);
         }
 
-        public static string[] ParseTemplateText(string templText)
+
+        /// <summary>
+        /// Parses string input into array based on character
+        /// </summary>
+        /// <param name="templText">String to Parse</param>
+        /// <param name="openchar">Open character</param>
+        /// <param name="closechar">Close character</param>
+        /// <returns></returns>
+        public static string[] ParseTemplateText(string templText, String openchar = "[", String closechar = "]")
         {
-            char[] paramAry = { Convert.ToChar("["), Convert.ToChar("]") };
+            char[] paramAry = { Convert.ToChar(openchar), Convert.ToChar(closechar) };
 
             //use double sqr brqckets as escape char.
             var foundEscapeChar = false;
-            if (templText.IndexOf("[[", StringComparison.Ordinal) > 0 | templText.IndexOf("]]", StringComparison.Ordinal) > 0)
+            if (templText.IndexOf(openchar + openchar, StringComparison.Ordinal) > 0 | templText.IndexOf(closechar + closechar, StringComparison.Ordinal) > 0)
             {
-                templText = templText.Replace("[[", "**SQROPEN**");
-                templText = templText.Replace("]]", "**SQRCLOSE**");
+                templText = templText.Replace(openchar + openchar, "**SQROPEN**");
+                templText = templText.Replace(closechar + closechar, "**SQRCLOSE**");
                 foundEscapeChar = true;
             }
 
@@ -529,11 +537,11 @@ namespace NBrightCore.common
                 {
                     if (strOut[lp].Contains("**SQROPEN**"))
                     {
-                        strOut[lp] = strOut[lp].Replace("**SQROPEN**", "[");
+                        strOut[lp] = strOut[lp].Replace("**SQROPEN**", openchar);
                     }
                     if (strOut[lp].Contains("**SQRCLOSE**"))
                     {
-                        strOut[lp] = strOut[lp].Replace("**SQRCLOSE**", "]");
+                        strOut[lp] = strOut[lp].Replace("**SQRCLOSE**", closechar);
                     }
                 }
             }
