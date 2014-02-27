@@ -19,7 +19,7 @@ namespace NBrightCore.TemplateEngine
             TemplateData = "";
             IsTemplateFound = false;
             _templatePath = templatepath;
-            if (templatepath != null)
+            if (!String.IsNullOrEmpty(templatepath))
             {
                 char[] charsToTrim = {'\\', '.', ' '};
                 TemplateName = Path.GetFileName(templatepath.TrimEnd(charsToTrim).TrimStart(charsToTrim));

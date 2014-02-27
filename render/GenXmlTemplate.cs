@@ -200,7 +200,13 @@ namespace NBrightCore.render
                                 case "testof":
                                     CreateTestOf(container, xmlNod);
                                     break;
+                                case "if":
+                                    CreateTestOf(container, xmlNod);
+                                    break;
                                 case "endtestof":
+                                    CreateEndTestOf(container, xmlNod);
+                                    break;
+                                case "endif":
                                     CreateEndTestOf(container, xmlNod);
                                     break;
                                 case "htmlof":

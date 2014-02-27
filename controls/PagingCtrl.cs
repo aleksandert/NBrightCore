@@ -1,11 +1,8 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using NBrightCore.common;
 using NBrightCore.render;
 
 namespace NBrightCore.controls 
@@ -14,6 +11,7 @@ namespace NBrightCore.controls
     {
 
         #region "setup"
+
 
         protected Repeater RpData;
         public int CurrentPage { get; set; }
@@ -36,8 +34,19 @@ namespace NBrightCore.controls
         public string TextPrevSection { get; set; }
         public string TextNextSection { get; set; }
 
+        private String _headerTemplate = "";
+        private String _bodyTemplate = "";
+        private String _footerTemplate = "";
+
         /// <summary>
-        /// Use a html href link link for hte paging buttons, this is so SEO robots can follow them easily (Only needed for Front Office Display)
+        /// If set to true the new list format will be used, otherwise the legacy span system will be use.
+        /// </summary>
+        public Boolean UseListDisplay { get; set; }
+
+
+        //
+        /// <summary>
+        /// Use a html href link link for the paging buttons, this is so SEO robots can follow them easily (Only needed for Front Office Display)
         /// </summary>
         public bool UseHrefLink
         {
@@ -48,8 +57,19 @@ namespace NBrightCore.controls
                     //SEO page link
                     var modparam = "";
                     if (ModuleId != "") modparam = "&pagemid=" + ModuleId;
-                    RpData.ItemTemplate = new GenXmlTemplate("<a href=\"?page=[<tag type='valueof' databind='PageNumber' />]" + modparam + "\">[<tag type='valueof' databind='Text' />]</a>");
+                    RpData.ItemTemplate = new GenXmlTemplate("[<tag type='valueof' databind='PreText' />]<a href=\"?page=[<tag type='valueof' databind='PageNumber' />]" + modparam + "\">[<tag type='valueof' databind='Text' />]</a>[<tag type='valueof' databind='PostText' />]");
                 }
+            }
+        }
+        /// <summary>
+        /// Allows client application to specify a friendly url tmeplate for the paging.
+        /// This template token will need to be created in the consumer application token system "e.g. GenXmlTemplateExt.cs class in the case of NBrightStore"
+        /// </summary>
+        public String HrefLinkTemplate
+        {
+            set
+            {
+                RpData.ItemTemplate = new GenXmlTemplate(value);
             }
         }
 
@@ -61,6 +81,7 @@ namespace NBrightCore.controls
         public PagingCtrl()
         {
             UseHrefLink = false;
+            UseListDisplay = false;
             ModuleId = "";
             CurrentPage = 1;
             PageSize = 10;
@@ -83,6 +104,10 @@ namespace NBrightCore.controls
             TextPrevSection = "...";
             TextNextSection = "...";
 
+            // set the for default <span> diplay
+            _headerTemplate = "<div class='" + CssPagingDiv + "'>";
+            _bodyTemplate = "[<tag type='valueof' databind='PreText' />][<tag id='cmdPg' type='linkbutton' Text='databind:Text' commandname='Page' commandargument='PageNumber' />][<tag type='valueof' databind='PostText' />]";
+            _footerTemplate = "</div>";
         }
 
         #endregion
@@ -93,14 +118,13 @@ namespace NBrightCore.controls
         protected override void OnInit(EventArgs e)
         {
             base.OnInit(e);
-            RpData = new Repeater();
-            RpData.ItemCommand += new RepeaterCommandEventHandler(ClientItemCommand);
+                RpData = new Repeater();
+                RpData.ItemCommand += new RepeaterCommandEventHandler(ClientItemCommand);
+                RpData.ItemTemplate = new GenXmlTemplate(_bodyTemplate);
 
-            RpData.ItemTemplate = new GenXmlTemplate("[<tag id='cmdPg' type='linkbutton' Text='databind:Text' commandname='Page' commandargument='PageNumber' />]");
-
-            this.Controls.AddAt(0, new LiteralControl("</div>"));
-            this.Controls.AddAt(0, RpData);
-            this.Controls.AddAt(0, new LiteralControl("<div class='" + CssPagingDiv + "'>"));
+                this.Controls.AddAt(0, new LiteralControl(_footerTemplate));
+                this.Controls.AddAt(0, RpData);
+                this.Controls.AddAt(0, new LiteralControl(_headerTemplate));
         }
 
         public event RepeaterCommandEventHandler PageChanged;
@@ -121,8 +145,6 @@ namespace NBrightCore.controls
 
         }
 
-
-
         #endregion
 
 
@@ -131,99 +153,96 @@ namespace NBrightCore.controls
         public void BindPageLinks()
         {
 
-            var pageL = new List<NBrightEspacePaging>();
-
             var lastPage = Convert.ToInt32(TotalRecords / PageSize);
-            if (TotalRecords != (lastPage * PageSize))
+            if (TotalRecords != (lastPage * PageSize)) lastPage = lastPage + 1;
+            if (lastPage == 1) return;            //if only one page, don;t process
+
+            var pageL = new List<NBrightPaging>();
+
+            if (UseListDisplay)
             {
-                lastPage = lastPage + 1;
+                this.Controls.AddAt(this.Controls.IndexOf(RpData), new LiteralControl("<ul>"));
+                this.Controls.AddAt(this.Controls.IndexOf(RpData) + 1, new LiteralControl("</ul>"));
             }
-
-            //if only one page, don;t process
-            if (lastPage == 1)
-            {
-                return;
-            }
-
-            if (CurrentPage <= 0)
-            {
-                CurrentPage = 1;
-            }
-
-            NBrightEspacePaging p;
-
+            
+            if (CurrentPage <= 0) CurrentPage = 1;
+            NBrightPaging p;
             const int pageLinksPerPage = 10;
-
             var rangebase = Convert.ToInt32((CurrentPage - 1)/pageLinksPerPage);
-
             var lowNum = (rangebase * pageLinksPerPage) + 1;
             var highNum = lowNum + (pageLinksPerPage -1);
+            if (highNum > Convert.ToInt32(lastPage)) highNum = Convert.ToInt32(lastPage);
+            if (lowNum < 1) lowNum = 1;
 
-            if (highNum > Convert.ToInt32(lastPage))
-            {
-                highNum = Convert.ToInt32(lastPage);
-            }
-            if (lowNum < 1)
-            {
-                lowNum = 1;
-            }
-
-            if ((lowNum != 1) && (CurrentPage > 1) && (TextFirst != ""))
-            {
-                p = new NBrightEspacePaging {PageNumber = "1", Text = "<span class='" + CssFirstPage + "'>" + TextFirst + "</span>"};
-                pageL.Add(p);
-            }
-
-            if ((CurrentPage > 1) && (TextPrev != ""))
-            {
-                p = new NBrightEspacePaging { PageNumber = Convert.ToString(CurrentPage - 1), Text = "<span class='" + CssPrevPage + "'>" + TextPrev + "</span>" };
-                pageL.Add(p);                
-            }
-
-            if ((lowNum > 1) && (TextPrevSection != ""))
-            {
-                p = new NBrightEspacePaging { PageNumber = Convert.ToString(lowNum - 1), Text = "<span class='" + CssPrevSection + "'>" + TextPrevSection + "</span>" };
-                pageL.Add(p);
-            }
+            var listtype = "span";
+            if (UseListDisplay) listtype = "li";
 
 
-            for (int i = lowNum; i <= highNum; i++)
-            {
-                
-                if (i == CurrentPage)
+                #region "header"
+
+                if ((lowNum != 1) && (CurrentPage > 1) && (TextFirst != ""))
                 {
-                    p = new NBrightEspacePaging { PageNumber = Convert.ToString(i), Text = "<span class='" + CssSelectedPage + "'>" + Convert.ToString(i) + "</span>" };
+                    p = new NBrightPaging { PageNumber = "1", PreText = "<" + listtype + " class='" + CssFirstPage + "'>", Text = TextFirst , PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
                 }
-                else
+
+                if ((CurrentPage > 1) && (TextPrev != ""))
                 {
-                    p = new NBrightEspacePaging { PageNumber = Convert.ToString(i), Text = "<span class='" + CssNormalPage + "'>" + Convert.ToString(i) + "</span>" };
+                    p = new NBrightPaging { PageNumber = Convert.ToString(CurrentPage - 1), PreText = "<" + listtype + " class='" + CssPrevPage + "'>", Text = TextPrev, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
                 }
-                pageL.Add(p);
 
-            }
+                if ((lowNum > 1) && (TextPrevSection != ""))
+                {
+                    p = new NBrightPaging { PageNumber = Convert.ToString(lowNum - 1), PreText = "<" + listtype + " class='" + CssPrevSection + "'>", Text = TextPrevSection, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
+                }
+
+                #endregion
+
+                #region "body"
+                for (int i = lowNum; i <= highNum; i++)
+                {
+
+                    if (i == CurrentPage)
+                    {
+                        p = new NBrightPaging { PageNumber = Convert.ToString(i), PreText = "<" + listtype + " class='" + CssSelectedPage + "'>" , Text = Convert.ToString(i), PostText = "</" + listtype + ">" };
+                    }
+                    else
+                    {
+                        p = new NBrightPaging { PageNumber = Convert.ToString(i), PreText = "<" + listtype + " class='" + CssNormalPage + "'>" , Text =  Convert.ToString(i) , PostText = "</" + listtype + ">" };
+                    }
+                    pageL.Add(p);
+
+                }
+
+                #endregion
+
+                #region "footer"
+                if ((lastPage > highNum) && (TextNextSection != ""))
+                {
+                    p = new NBrightPaging { PageNumber = Convert.ToString(highNum + 1), PreText = "<" + listtype + " class='" + CssNextSection + "'>", Text = TextNextSection, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
+                }
 
 
-            if ((lastPage > highNum) && (TextNextSection != ""))
-            {
-                p = new NBrightEspacePaging { PageNumber = Convert.ToString(highNum + 1), Text = "<span class='" + CssNextSection + "'>" + TextNextSection + "</span>" };
-                pageL.Add(p);
-            }
+                if ((lastPage > CurrentPage) && (TextNext != ""))
+                {
+                    p = new NBrightPaging { PageNumber = Convert.ToString(CurrentPage + 1), PreText = "<" + listtype + " class='" + CssNextPage + "'>", Text = TextNext, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
+                }
 
+                if ((lastPage != highNum) && (lastPage > CurrentPage) && (TextLast != ""))
+                {
+                    p = new NBrightPaging { PageNumber = Convert.ToString(lastPage), PreText = "<" + listtype + " class='" + CssLastPage + "'>", Text = TextLast, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
+                }
 
-            if ((lastPage > CurrentPage) && (TextNext != ""))
-            {
-                p = new NBrightEspacePaging { PageNumber = Convert.ToString(CurrentPage + 1), Text = "<span class='" + CssNextPage + "'>" + TextNext + "</span>" };
-                pageL.Add(p);
-            }
-
-            if ((lastPage != highNum) && (lastPage > CurrentPage) && (TextLast != ""))
-            {
-                p = new NBrightEspacePaging { PageNumber = Convert.ToString(lastPage), Text = "<span class='" + CssLastPage + "'>" + TextLast + "</span>" };
-                pageL.Add(p);                
-            }
+                #endregion
 
             RpData.DataSource = pageL;
             RpData.DataBind();
+
 
         }
 
@@ -232,10 +251,13 @@ namespace NBrightCore.controls
 
         #region "data classes"
 
-        private class NBrightEspacePaging
+        private class NBrightPaging
         {
             public string PageNumber { get; set; }
+            public string PreText { get; set; }
             public string Text { get; set; }
+            public string PostText { get; set; }
+
         }
 
         #endregion

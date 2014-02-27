@@ -102,9 +102,9 @@ namespace NBrightCore.render
                                 {
                                     DeleteFile(lang + fName, folderMapPath, thumbs);
                                 }
-                                xmlData = SetGenXmLvalue(xmlData, "genxml/hidden/hid" + ctrlName, "");
-                                xmlData = SetGenXmLvalue(xmlData, "genxml/hidden/hidinfo" + ctrlName, "");
-                                xmlData = SetGenXmLvalue(xmlData, "genxml/textbox/txt" + ctrlName, "");
+                                xmlData = SetGenXmlValue(xmlData, "genxml/hidden/hid" + ctrlName, "");
+                                xmlData = SetGenXmlValue(xmlData, "genxml/hidden/hidinfo" + ctrlName, "");
+                                xmlData = SetGenXmlValue(xmlData, "genxml/textbox/txt" + ctrlName, "");
                             }
                         }
                     }
@@ -135,9 +135,9 @@ namespace NBrightCore.render
                             {
                                 DeleteFile(lang + fName, folderMapPath, thumbs);
                             }
-                            xmlData = SetGenXmLvalue(xmlData, "genxml/hidden/hid" + ctrlName, "");
-                            xmlData = SetGenXmLvalue(xmlData, "genxml/hidden/hidinfo" + ctrlName, "");
-                            xmlData = SetGenXmLvalue(xmlData, "genxml/textbox/txt" + ctrlName, "");
+                            xmlData = SetGenXmlValue(xmlData, "genxml/hidden/hid" + ctrlName, "");
+                            xmlData = SetGenXmlValue(xmlData, "genxml/hidden/hidinfo" + ctrlName, "");
+                            xmlData = SetGenXmlValue(xmlData, "genxml/textbox/txt" + ctrlName, "");
                         }
                     }
                 }
@@ -727,7 +727,7 @@ namespace NBrightCore.render
         public static string SetHiddenField(string dataXml, string FieldId, string newValue, bool cdata = true)
         {
             var xPath = "genxml/hidden/" + FieldId.ToLower();
-            return SetGenXmLvalue(dataXml, xPath, newValue, cdata);
+            return SetGenXmlValue(dataXml, xPath, newValue, cdata);
         }
 
         public static void SetFieldItemList(Repeater rpData, string fieldId, ListItemCollection newValue, int rowIndex = 0)
@@ -923,27 +923,35 @@ namespace NBrightCore.render
             var providerList = GenXProviderManager.ProviderList;
 
             //build list of controls
+            // if we have disabled and hidden the control then assume it does not want to be in the XML output.
+            // (NOTE: Ideally this should be done with testing EnabledViewState which is avalable on base control type.
+            //   turning off viewstate in control creation works, but turning viewstate on in databind does not work for a dropdownlist??...like to find out why, but not got the time!)
             foreach (Control ctrl in rpItem.Controls)
             {
                 if (ctrl is DropDownList)
                 {
-                    ddlCtrls.Add(ctrl);
+                    var ctl = (DropDownList) ctrl;
+                    if (ctl.Enabled & ctl.Visible) ddlCtrls.Add(ctrl);
                 }
                 else if (ctrl is CheckBoxList)
                 {
-                    chkCtrls.Add(ctrl);
+                    var ctl = (CheckBoxList)ctrl;
+                    if (ctl.Enabled & ctl.Visible) chkCtrls.Add(ctrl);
                 }
                 else if (ctrl is CheckBox)
                 {
-                    chkboxCtrls.Add(ctrl);
+                    var ctl = (CheckBox)ctrl;
+                    if (ctl.Enabled & ctl.Visible) chkboxCtrls.Add(ctrl);
                 }
                 else if (ctrl is TextBox)
                 {
-                    txtCtrls.Add(ctrl);
+                    var ctl = (TextBox)ctrl;
+                    if (ctl.Enabled & ctl.Visible) txtCtrls.Add(ctrl);
                 }
                 else if (ctrl is RadioButtonList)
                 {
-                    rblCtrls.Add(ctrl);
+                    var ctl = (RadioButtonList)ctrl;
+                    if (ctl.Enabled & ctl.Visible) rblCtrls.Add(ctrl);
                 }
                 else if (ctrl is HtmlGenericControl)
                 {
@@ -1873,6 +1881,7 @@ namespace NBrightCore.render
             var nod = xmlDoc.SelectSingleNode(xPath);
             if ((nod != null))
             {
+                if (newValue == "") cdata = false; //stops invalid "<" char error
                 if (cdata)
                 {
                     nod.InnerXml = "<![CDATA[" + newValue + "]]>";
@@ -1929,11 +1938,14 @@ namespace NBrightCore.render
             }
         }
 
-        public static string SetGenXmLvalue(string dataXml, string xpath, string Value, bool cdata = true)
+        public static string SetGenXmlValue(string dataXml, string xpath, string Value, bool cdata = true)
         {
             var xmlDoc = new XmlDataDocument();
             xmlDoc.LoadXml(dataXml);
-            ReplaceXmlNode(xmlDoc, xpath, Value,cdata);
+            if (xpath.Contains("@"))
+                ReplaceXmLatt(xmlDoc, xpath, Value);
+            else
+                ReplaceXmlNode(xmlDoc, xpath, Value,cdata);
             return xmlDoc.OuterXml;
         }
 
@@ -2656,22 +2668,48 @@ namespace NBrightCore.render
             searchFrom = searchFrom.Replace("\'", "''");
             searchTo = searchTo.Replace("\'", "''");
 
-            strOut += "( ([" + dataField + "].value('(" + xpath;
-            strOut += ")[1]', '" + sqlType;
-            if (sqlType=="datetime")
-                strOut += "') >= convert(datetime,'" + searchFrom + "') ";
-            else
-                strOut += "') >= '" + searchFrom + Convert.ToChar("'");                
+            if (xpath == "")
+            {
+                strOut += "(" + dataField + " ";
+                if (sqlType == "datetime")
+                    strOut += " >= convert(datetime,'" + searchFrom + "') ";
+                else if (sqlType.StartsWith("decimal"))
+                    strOut += " >= " + searchFrom + " ";
+                else
+                    strOut += " >= '" + searchFrom + "' ";
 
-            strOut += ") and ";
-            strOut += "([" + dataField + "].value('(" + xpath;
-            strOut += ")[1]', '" + sqlType;
-            if (sqlType == "datetime")
-                strOut += "') <= convert(datetime,'" + searchTo + "') ";
+                strOut += " and ";
+                strOut += "" + dataField + " ";
+                if (sqlType == "datetime")
+                    strOut += " <= convert(datetime,'" + searchTo + "') ";
+                else if (sqlType.StartsWith("decimal"))
+                    strOut += " <= " + searchTo + " ";
+                else
+                    strOut += " <= '" + searchTo + "' ";
+                strOut += ")";
+            }
             else
-                strOut += "') <= '" + searchTo + Convert.ToChar("'");
-            strOut += ") )";
+            {
+                strOut += "( ([" + dataField + "].value('(" + xpath;
+                strOut += ")[1]', '" + sqlType;
+                if (sqlType == "datetime")
+                    strOut += "') >= convert(datetime,'" + searchFrom + "') ";
+                else if (sqlType.StartsWith("decimal"))
+                    strOut += "') >= " + searchFrom;
+                else
+                    strOut += "') >= '" + searchFrom + Convert.ToChar("'");
 
+                strOut += ") and ";
+                strOut += "([" + dataField + "].value('(" + xpath;
+                strOut += ")[1]', '" + sqlType;
+                if (sqlType == "datetime")
+                    strOut += "') <= convert(datetime,'" + searchTo + "') ";
+                else if (sqlType == "decimal")
+                    strOut += "') <= " + searchTo;
+                else
+                    strOut += "') <= '" + searchTo + Convert.ToChar("'");
+                strOut += ") )";
+            }
             //remove possible SQL injection commands
             strOut = StripSqlCommands(strOut);
 
@@ -2685,10 +2723,17 @@ namespace NBrightCore.render
             //remove SQL injection
             searchText = searchText.Replace("\'", "''");
 
-            strOut += "([" + dataField + "].value('(" + xpath;
-            strOut += ")[1]', '" + sqlType;
-            strOut += "') = '" + searchText + Convert.ToChar("'");
-            strOut += ")";
+            if (xpath == "")
+            {
+                strOut += " " + dataField + " = '" + searchText + "' ";
+            }
+            else
+            {
+                strOut += "([" + dataField + "].value('(" + xpath;
+                strOut += ")[1]', '" + sqlType;
+                strOut += "') = '" + searchText + Convert.ToChar("'");
+                strOut += ")";                
+            }
 
             //remove possible SQL injection commands
             strOut = StripSqlCommands(strOut);
@@ -2703,11 +2748,17 @@ namespace NBrightCore.render
             //remove SQL injection
             searchText = searchText.Replace("\'", "''");
 
-            strOut += "([" + dataField + "].value('(" + xpath;
-            strOut += ")[1]', '" + sqlType;
-            strOut += "') LIKE '%" + searchText + "%'";
-            strOut += ")";
-
+            if (xpath == "")
+            {
+                strOut += " " + dataField + " Like '%" + searchText + "%' ";
+            }
+            else
+            {
+                strOut += "([" + dataField + "].value('(" + xpath;
+                strOut += ")[1]', '" + sqlType;
+                strOut += "') LIKE '%" + searchText + "%'";
+                strOut += ")";
+            }
             //remove possible SQL injection commands
             strOut = StripSqlCommands(strOut);
 
