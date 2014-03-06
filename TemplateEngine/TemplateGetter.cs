@@ -33,7 +33,15 @@ namespace NBrightCore.TemplateEngine
             TemplCtrl4 = new TemplateController(secondaryMapPath, defaultThemeFolder);
         }
 
-        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true)
+        /// <summary>
+        /// Get template from the filesytem, search primary mappath (both themes), if not found search socendary mappath (both themes)
+        /// </summary>
+        /// <param name="templatename">template file anme</param>
+        /// <param name="lang">langauge to get</param>
+        /// <param name="replaceTemplateTokens">replace the [Template:*] tokens</param>
+        /// <param name="replaceStringTokens">replace the [String:*] tokens</param>
+        /// <returns></returns>
+        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true)
         {
             var templateData = "";
             var objT = new Template("");
@@ -61,12 +69,9 @@ namespace NBrightCore.TemplateEngine
             }
 
 
-            if (replaceTemplateTokens)
-            {
-                templateData = ReplaceTemplateTokens(templateData, lang);
-            }
+            if (replaceTemplateTokens) templateData = ReplaceTemplateTokens(templateData, lang);
 
-            templateData = ReplaceResourceString(templateData);
+            if (replaceStringTokens) templateData = ReplaceResourceString(templateData);
 
             return templateData;
         }

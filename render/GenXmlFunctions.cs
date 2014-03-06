@@ -1374,7 +1374,7 @@ namespace NBrightCore.render
 
                 strXml += "<hidden>";
 
-                var xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='hidden']");
+                var xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='hid']");
                 if (xmlNodeList != null)
                 {
                     foreach (XmlNode nod in xmlNodeList)
@@ -1517,7 +1517,7 @@ namespace NBrightCore.render
                 strXml += "</checkbox>";
 
                 strXml += "<dropdownlist>";
-                xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='undefined']");
+                xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='dd']");
                 if (xmlNodeList != null)
                 {
                     foreach (XmlNode nod in xmlNodeList)
@@ -1530,45 +1530,37 @@ namespace NBrightCore.render
                                 ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
                             }
 
-                            if (ajaxId.StartsWith("ddl"))
+                            var dataValue = "";
+                            if (nod.Attributes != null && (nod.Attributes["val"] != null)) dataValue = nod.Attributes["val"].InnerText;
+                            var dataTyp = "";
+                            if (nod.Attributes != null && (nod.Attributes["dt"] != null)) dataTyp = nod.Attributes["dt"].InnerText;
+
+                            var selText = nod.InnerText;
+
+                            if (!String.IsNullOrEmpty(originalXml))
                             {
-
-                                var selText = nod.InnerText;
-
-                                if (!String.IsNullOrEmpty(originalXml))
+                                ReplaceXmlNode(xmlDoc, xmlRootName + "/dropdownlist/" + ajaxId, Utils.FormatToSave(dataValue));
+                            }
+                            else
+                            {
+                                if (dataTyp.ToLower() == "double")
                                 {
-                                    ReplaceXmlNode(xmlDoc, xmlRootName + "/dropdownlist/" + ajaxId, Utils.FormatToSave(selText));
+                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += Utils.FormatToSave(dataValue, TypeCode.Double);
+                                }
+                                else if (dataTyp.ToLower() == "date")
+                                {
+                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += Utils.FormatToSave(dataValue, TypeCode.DateTime);
                                 }
                                 else
                                 {
-                                    var dataTyp = "";
-                                    if (nod.Attributes != null && (nod.Attributes["dt"] != null))
-                                    {
-                                        dataTyp = nod.Attributes["dt"].InnerText;
-                                    }
-
-                                    selText = XmlConvert.EncodeName(selText);
-
-                                    if (dataTyp.ToLower() == "double")
-                                    {
-                                        strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
-                                        strXml += Utils.FormatToSave(selText, TypeCode.Double);
-                                    }
-                                    else if (dataTyp.ToLower() == "date")
-                                    {
-                                        strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
-                                        strXml += Utils.FormatToSave(selText, TypeCode.DateTime);
-                                    }
-                                    else
-                                    {
-                                        strXml += "<" + ajaxId + " selectedtext=\"" + selText + "\"><![CDATA[";
-                                        strXml += selText;
-                                    }
-                                    strXml += "]]></" + ajaxId + ">";
+                                    strXml += "<" + ajaxId + " selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += dataValue;
                                 }
+                                strXml += "]]></" + ajaxId + ">";
                             }
                         }
-
                     }
                 }
                 strXml += "</dropdownlist>";

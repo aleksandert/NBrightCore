@@ -1095,6 +1095,12 @@ namespace NBrightCore.render
         private void CreatePostBack(Control container, XmlNode xmlNod)
         {
             var hid = GetPostBackCtrl(xmlNod);
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["persistance"] != null))
+            {
+                // we normally would not want to bind postback field, but is we want to use the slected value again in JS on the return
+                // for example to populate a ajax driven ddl, the we can persist the data back to the client.
+                if (xmlNod.Attributes["persistance"].InnerText.ToLower() == "true") hid.DataBinding += PostBackDataBinding;
+            }
             container.Controls.Add(hid);
         }
 
@@ -1191,6 +1197,26 @@ namespace NBrightCore.render
                         }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                //do nothing
+            }
+        }
+
+        /// <summary>
+        /// Deal with postack data handling is persistance is set to true
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PostBackDataBinding(object sender, EventArgs e)
+        {
+            var hid = (HiddenField)sender;
+            var container = (IDataItemContainer)hid.NamingContainer;
+            try
+            {
+                hid.Visible = NBrightGlobal.IsVisible;
+                hid.Value = GenXmlFunctions.GetGenXmLnode(hid.ID, "hidden", Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn))).InnerText;
             }
             catch (Exception)
             {
