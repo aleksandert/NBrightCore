@@ -17,18 +17,18 @@ namespace NBrightCore.providers
 
         public abstract string HomeMapPath();
 
-        public abstract void SetCache(string CacheKey, object objObject, DateTime AbsoluteExpiration);
+        public abstract void SetCache(string cacheKey, object objObject, DateTime absoluteExpiration);
 
-        public abstract object GetCache(string CacheKey);
+        public abstract object GetCache(string cacheKey);
 
-        public abstract void RemoveCache(string CacheKey);
+        public abstract void RemoveCache(string cacheKey);
 
-        public abstract Dictionary<int, string> GetTabList(string CultureCode);
+        public abstract Dictionary<int, string> GetTabList(string cultureCode);
 
         public abstract List<string> GetCultureCodeList();
 
 		// This method is designed to return a list of resource keys and values that can be used for localization.
-		public abstract Dictionary<String, String> GetResourceData(String ResourcePath, String ResourceKey);
+		public abstract Dictionary<String, String> GetResourceData(String resourcePath, String resourceKey);
 
     }
 }

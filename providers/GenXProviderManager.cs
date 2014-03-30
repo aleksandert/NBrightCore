@@ -52,7 +52,7 @@ namespace NBrightCore.providers
             if (!ProviderList.ContainsKey(providerAssembyClass))
             {
                 var prov = CreateProvider(providerAssembyClass);
-                if (prov != null)
+                if (prov != null && !ProviderList.ContainsKey(providerAssembyClass))
                 {
                     ProviderList.Add(providerAssembyClass, prov);
                 }
@@ -108,7 +108,7 @@ namespace NBrightCore.providers
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     // maybe not be setup, so ignore
                 }

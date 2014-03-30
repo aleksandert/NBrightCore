@@ -207,7 +207,7 @@ namespace NBrightCore.common
                 case TypeCode.Double:
                     if (IsNumeric(inpData))
                     {
-                            return double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode);                            
+                        return double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode, outCulture);                            
                     }
                     return "0";
                 case TypeCode.DateTime:
@@ -787,6 +787,68 @@ namespace NBrightCore.common
 			return xmlDoc;
 		}
 
+        /// <summary>
+        /// Replace settings tokens in a template. {Setting:*} and [Setting:*]
+        /// </summary>
+        /// <param name="strTemplate">Template txt to be searched</param>
+        /// <param name="settingsDic">Dictionary of settings</param>
+        /// <returns></returns>
+        public static string ReplaceSettingTokens(string strTemplate, Dictionary<String, String> settingsDic)
+        {
+            const string tokenTag = "Settings:";
+            if (strTemplate.Contains(tokenTag))
+            {
+                var aryTempl = Utils.ParseTemplateText(strTemplate);
+                foreach (var s in aryTempl)
+                {
+                    if (s.StartsWith(tokenTag))
+                    {
+                        var xpath = s.Replace(tokenTag, "").Replace("]", "");
+                        var xValue = "";
+                        if (settingsDic.ContainsKey(xpath)) xValue = settingsDic[xpath];
+                        strTemplate = strTemplate.Replace("{" + s + "}", xValue); // deal with situation where a token is in the template as "[]" and a tag as "{}"
+                        strTemplate = strTemplate.Replace(s, xValue);
+                    }
+                }
+
+                //Search for {Settings:*}, this token may be used within a tag [] token
+                aryTempl = Utils.ParseTemplateText(strTemplate, "{", "}");
+                foreach (var s in aryTempl)
+                {
+                    if (s.StartsWith(tokenTag))
+                    {
+                        var xpath = s.Replace(tokenTag, "").Replace("}", "");
+                        if (settingsDic.ContainsKey(xpath)) strTemplate = strTemplate.Replace("{" + s + "}", settingsDic[xpath]);
+                    }
+                }
+
+            }
+            return strTemplate;
+        }
+
+
+        /// <summary>
+        /// Replaces any [Url:*] tokens in the template passed in.
+        /// </summary>
+        /// <param name="strTemplate"></param>
+        /// <returns></returns>
+        public static string ReplaceUrlTokens(string strTemplate)
+        {
+            const string tokenTag = "Url:";
+            if (strTemplate.Contains(tokenTag))
+            {
+                var aryTempl = Utils.ParseTemplateText(strTemplate);
+                foreach (var s in aryTempl)
+                {
+                    if (s.StartsWith(tokenTag))
+                    {
+                        var urlparam = s.Replace(tokenTag, "").Replace("]", "");
+                        strTemplate = strTemplate.Replace(s, Utils.RequestParam(HttpContext.Current, urlparam));
+                    }
+                }
+            }
+            return strTemplate;
+        }
 
     }
 }
