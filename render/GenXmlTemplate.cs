@@ -22,7 +22,7 @@ namespace NBrightCore.render
         protected string EditCultureCode = "";
         protected Dictionary<string, string> Settings;
         private Dictionary<string, string> hiddenFields;
-		private string _ResourcePath = "";
+        private List<string> _ResourcePath;
         
         public String GetHiddenFieldValue(string Key)
         {
@@ -38,6 +38,16 @@ namespace NBrightCore.render
         public void AddProvider()
         {
             
+        }
+
+
+        /// <summary>
+        /// Add a relative folder for resx files to be included in templating localized data
+        /// </summary>
+        /// <param name="resxFolder"></param>
+        public void AddResxFolder(String resxFolder)
+        {
+            _ResourcePath.Add(resxFolder);
         }
 
         public GenXmlTemplate(string templateText, Dictionary<string, string> settings): this(templateText, "genxml", "XMLData", "", settings)
@@ -58,6 +68,7 @@ namespace NBrightCore.render
             // find any meta tags
             var xmlDoc = new XmlDocument();
             string ctrltype = "";
+            _ResourcePath = new List<string>();
             foreach (var s in AryTempl)
             {
                 var htmlDecode = System.Web.HttpUtility.HtmlDecode(s);
@@ -90,7 +101,7 @@ namespace NBrightCore.render
 
                                     if (xmlNod.Attributes["id"].Value.ToLower() == "resourcepath")
                                     {
-                                        _ResourcePath = xmlNod.Attributes["value"].Value;
+                                        _ResourcePath.Add(xmlNod.Attributes["value"].Value);
                                     }
                                 }
                             }
@@ -362,19 +373,23 @@ namespace NBrightCore.render
             if (xmlNod.Attributes != null && (xmlNod.Attributes["datatype"] != null))
             {
                 var strFormat = "";
-                if (xmlNod.Attributes != null && (xmlNod.Attributes["format"] != null))
+                if ((xmlNod.Attributes["format"] != null))
                 {
                     strFormat = xmlNod.Attributes["format"].InnerXml.Replace(":", "**COLON**");
                 }
+                if ((xmlNod.Attributes["culturecode"] != null))
+                {
+                    strFormat += "," + xmlNod.Attributes["culturecode"].InnerXml;
+                }
                 if (xmlNod.Attributes["datatype"].InnerText.ToLower() == "date")
-                    {
-                        if (strFormat == "") strFormat = "d";
-                        lc.Text = "date:" + strFormat + ":" + lc.Text;
-                    }
-                    if (xmlNod.Attributes["datatype"].InnerText.ToLower() == "double")
-                    {
-                        lc.Text = "double:" + strFormat + ":" + lc.Text;
-                    }                
+                {
+                    if (strFormat == "") strFormat = "d";
+                    lc.Text = "date:" + strFormat + ":" + lc.Text;
+                }
+                if (xmlNod.Attributes["datatype"].InnerText.ToLower() == "double")
+                {
+                    lc.Text = "double:" + strFormat + ":" + lc.Text;
+                }
 
             }
 
@@ -1316,71 +1331,79 @@ namespace NBrightCore.render
             try
             {
                 lc.Visible = NBrightGlobal.IsVisible;
-                    // check if we have any formatting to do
-                    var strFormat = "";
-                    var strFormatType = "";
-                    var xPath = lc.Text;
-                    if (lc.Text.ToLower().StartsWith("date:"))
+                // check if we have any formatting to do
+                var strFormat = "";
+                var strFormatType = "";
+                var strFormatCultureCode = "";
+                var xPath = lc.Text;
+                if (lc.Text.ToLower().StartsWith("date:"))
+                {
+                    var strF = lc.Text.Split(':');
+                    if (strF.Length == 3)
                     {
-                        var strF = lc.Text.Split(':');
-                        if (strF.Length == 3)
-                        {
-                            strFormat = strF[1].Replace("**COLON**", ":");
-                            strFormatType = "date";
-                            xPath = strF[2];
-                        }
+                        strFormat = strF[1].Replace("**COLON**", ":");
+                        strFormatType = "date";
+                        xPath = strF[2];
                     }
-                    if (lc.Text.ToLower().StartsWith("double:"))
+                }
+                if (lc.Text.ToLower().StartsWith("double:"))
+                {
+                    var strF = lc.Text.Split(':');
+                    if (strF.Length == 3)
                     {
-                        var strF = lc.Text.Split(':');
-                        if (strF.Length == 3)
-                        {
-                            strFormat = strF[1].Replace("**COLON**", ":");
-                            strFormatType = "double";
-                            xPath = strF[2];
-                        }
+                        var f = strF[1].Replace("**COLON**", ":").Split(',');
+                        if (f.Length == 2) strFormatCultureCode = f[1];
+                        strFormat = f[0];
+                        strFormatType = "double";
+                        xPath = strF[2];
                     }
+                }
 
-                    if (lc.Text.ToLower().StartsWith("resxdata:"))
+                if (lc.Text.ToLower().StartsWith("resxdata:"))
+                {
+                    //Text data passed as resx, so display it.
+                    lc.Text = lc.Text.Replace("resxdata:", "");
+                }
+                else
+                {
+                    //Get Data or set to empty is no data exits
+                    if (container.DataItem != null)
                     {
-                        //Text data passed as resx, so display it.
-                        lc.Text = lc.Text.Replace("resxdata:", "");
-                    }
-                    else
-                    {
-                        //Get Data or set to empty is no data exits
-                        if (container.DataItem != null)
+                        if (lc.Text.ToLower().StartsWith("databind:"))
                         {
-                            if (lc.Text.ToLower().StartsWith("databind:"))
+                            lc.Text =
+                                Convert.ToString(DataBinder.Eval(container.DataItem,
+                                    lc.Text.ToLower().Replace("databind:", "")));
+                        }
+                        else
+                        {
+                            XmlNode nod =
+                                GenXmlFunctions.GetGenXmLnode(
+                                    DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xPath);
+                            if ((nod != null))
                             {
-                                lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
+                                lc.Text = XmlConvert.DecodeName(nod.InnerText);
                             }
                             else
                             {
-                                XmlNode nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xPath);
-                                if ((nod != null))
-                                {
-                                    lc.Text = XmlConvert.DecodeName(nod.InnerText);
-                                }
-                                else
-                                {
-                                    lc.Text = "";
-                                }
+                                lc.Text = "";
                             }
                         }
-                        
                     }
+
+                }
 
 
                 //Do the formatting
-                    if (strFormatType == "date")
-                    {
-                        lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.DateTime, strFormat);
-                    }
-                    if (strFormatType == "double")
-                    {
-                        lc.Text = Utils.FormatToDisplay(lc.Text, Utils.GetCurrentCulture(), TypeCode.Double, strFormat);
-                    }
+                if (strFormatCultureCode == "") strFormatCultureCode = Utils.GetCurrentCulture();
+                if (strFormatType == "date")
+                {
+                    lc.Text = Utils.FormatToDisplay(lc.Text, strFormatCultureCode, TypeCode.DateTime, strFormat);
+                }
+                if (strFormatType == "double")
+                {
+                    lc.Text = Utils.FormatToDisplay(lc.Text, strFormatCultureCode, TypeCode.Double, strFormat);
+                }
 
             }
             catch (Exception)
@@ -2005,16 +2028,19 @@ namespace NBrightCore.render
 			var xmlNod = xmlDoc.SelectSingleNode("root/tag");                        
 			if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekey"] != null)))
 			{
-				if (_ResourcePath != "")
+                if (_ResourcePath != null && _ResourcePath.Count > 0)
 				{
-					//add resource attribuutes to tag xml node.
-					var rList = providers.CmsProviderManager.Default.GetResourceData(_ResourcePath, xmlNod.Attributes["resourcekey"].Value);
-					foreach (var i in rList)
-					{
-						var aNod = xmlDoc.CreateAttribute(i.Key);
-						aNod.Value = i.Value;
-						xmlNod.Attributes.Append(aNod);
-					}
+                    foreach (var r in _ResourcePath)
+                    {
+                        //add resource attribuutes to tag xml node.
+                        var rList = providers.CmsProviderManager.Default.GetResourceData(r, xmlNod.Attributes["resourcekey"].Value);
+                        foreach (var i in rList)
+                        {
+                            var aNod = xmlDoc.CreateAttribute(i.Key);
+                            aNod.Value = i.Value;
+                            xmlNod.Attributes.Append(aNod);
+                        }                        
+                    }
 					var rNod = xmlNod.Attributes["resourcekey"];
 					xmlNod.Attributes.Remove(rNod);
 				}

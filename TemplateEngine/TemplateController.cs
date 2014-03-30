@@ -23,7 +23,6 @@ namespace NBrightCore.TemplateEngine
             HomeMapPath = homeMapPath.TrimEnd('\\');
             ThemeFolder = themeFolder.TrimEnd('\\');
             TemplateMapPath = string.Format("{0}\\{1}\\", homeMapPath.TrimEnd('\\'), themeFolder.TrimEnd('\\'));
-            SetupThemeFolders("Default");
         }
 
         #region methods
@@ -40,7 +39,7 @@ namespace NBrightCore.TemplateEngine
 				}
 				catch (Exception)
 				{
-					// we might get an error if it's an invlid path,  created by export inport DNN portals onto different system folder
+					// we might get an error if it's an invlid path,  created by export import DNN portals onto different system folder
 					// we can ignore these, becuase when editing a module template the setting should re-align when updated.
 				}
 			}
@@ -127,27 +126,25 @@ namespace NBrightCore.TemplateEngine
 
             //Get all the langauge Specific templates
                 var folderPath = string.Format("{0}\\{1}\\", TemplateMapPath.TrimEnd('\\'), lang);
-                if (!Directory.Exists(folderPath))
+                if (Directory.Exists(folderPath))
                 {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                var langfiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
-                foreach (string file in langfiles)
-                {
-                    if (Path.GetFileName(file) != null)
+                    var langfiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+                    foreach (string file in langfiles)
                     {
-                        var fkey = Path.GetFileName(file);
-                        if (fkey != null)
+                        if (Path.GetFileName(file) != null)
                         {
-                            if (templateList.ContainsKey(fkey))
+                            var fkey = Path.GetFileName(file);
+                            if (fkey != null)
                             {
-                                templateList.Remove(fkey);
-                                templateList.Add(fkey, file);
-                            }
-                            else
-                            {
-                                templateList.Add(fkey, file);
+                                if (templateList.ContainsKey(fkey))
+                                {
+                                    templateList.Remove(fkey);
+                                    templateList.Add(fkey, file);
+                                }
+                                else
+                                {
+                                    templateList.Add(fkey, file);
+                                }
                             }
                         }
                     }

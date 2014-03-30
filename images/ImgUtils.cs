@@ -233,7 +233,7 @@ namespace NBrightCore.images
                 return fileNamePathOut;
             }
 // ReSharper disable UnusedVariable
-            catch (Exception e)
+            catch (Exception)
 // ReSharper restore UnusedVariable
             {
                 return "";
@@ -372,23 +372,6 @@ namespace NBrightCore.images
 
         public static Bitmap CreateThumbnail(string strFilepath, int intMaxWidth, int intMaxHeight)
         {
-            var cropType = "";
-            if (intMaxHeight != 0)
-            {
-                if (intMaxHeight > intMaxWidth)
-                {
-                    cropType = "P";
-                }
-                else if (intMaxHeight == intMaxWidth)
-                {
-                    cropType = "S";
-                }
-                else
-                {
-                    cropType = "L";
-                }
-            }
-
             Bitmap newImage = null;
 
             if (System.IO.File.Exists(strFilepath))
@@ -431,97 +414,38 @@ namespace NBrightCore.images
                             intMaxHeight = Convert.ToInt32(intMaxWidth/aspect);
                         }
 
-                        newWidth = intMaxWidth;
-                        newHeight = intMaxHeight;
-
-                        if (string.IsNullOrEmpty(cropType))
-                        {
-                            newImage = new Bitmap(newWidth, newHeight);
-                            var g = Graphics.FromImage(newImage);
-                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-
-                            g.FillRectangle(Brushes.White, 0, 0, newWidth, newHeight);
-                            g.DrawImage(sourceImage, 0, 0, newWidth, newHeight);
-                        }
-                        else if (cropType == "L")
-                        {
-                            newWidth = intMaxWidth;
-                            newHeight = Convert.ToInt32(intMaxWidth/aspect);
-
-                            cropImage = new Bitmap(newWidth, newHeight);
-                            Graphics gc = Graphics.FromImage(cropImage);
-                            gc.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            gc.FillRectangle(Brushes.White, 0, 0, newWidth, newHeight);
-                            gc.DrawImage(sourceImage, 0, 0, newWidth, newHeight);
-
-                            var destinationRec = new Rectangle(0, 0, newWidth, intMaxHeight);
-                            newImage = new Bitmap(newWidth, intMaxHeight);
-                            Graphics g = Graphics.FromImage(newImage);
-                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            g.FillRectangle(Brushes.White, 0, 0, newWidth, intMaxHeight);
-                            g.DrawImage(cropImage, destinationRec, 0, Convert.ToInt32((cropImage.Height - intMaxHeight)/2), newWidth, intMaxHeight, GraphicsUnit.Pixel);
-                        }
-                        else if (cropType == "P")
+                        if (sourceImage.PhysicalDimension.Height < sourceImage.PhysicalDimension.Width)
                         {
                             newWidth = Convert.ToInt32(intMaxHeight*aspect);
                             newHeight = intMaxHeight;
-
-                            cropImage = new Bitmap(newWidth, newHeight);
-                            var gc = Graphics.FromImage(cropImage);
-                            gc.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            gc.FillRectangle(Brushes.White, 0, 0, newWidth, newHeight);
-                            gc.DrawImage(sourceImage, 0, 0, newWidth, newHeight);
-
-                            var destinationRec = new Rectangle(0, 0, intMaxWidth, newHeight);
-                            newImage = new Bitmap(intMaxWidth, newHeight);
-                            var g = Graphics.FromImage(newImage);
-                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            g.FillRectangle(Brushes.White, 0, 0, intMaxWidth, newHeight);
-                            g.DrawImage(cropImage, destinationRec, Convert.ToInt32((cropImage.Width - intMaxWidth)/2), 0, intMaxWidth, newHeight, GraphicsUnit.Pixel);
-
                         }
-                        else if (cropType == "S")
+                        else
                         {
-                            if (sourceImage.PhysicalDimension.Height < sourceImage.PhysicalDimension.Width)
-                            {
-                                newWidth = Convert.ToInt32(intMaxHeight*aspect);
-                                newHeight = intMaxHeight;
-                            }
-                            else
-                            {
-                                newWidth = intMaxWidth;
-                                newHeight = Convert.ToInt32(intMaxWidth/aspect);
-                            }
-
-                            //-------------------------------------------
-                            //Do NOT allow white space on S croptype.
-                            if (newWidth < intMaxWidth)
-                            {
-                                newWidth = intMaxWidth;
-                                newHeight = Convert.ToInt32(intMaxWidth/aspect);
-                            }
-                            if (newHeight < intMaxHeight)
-                            {
-                                newHeight = intMaxHeight;
-                                newWidth = Convert.ToInt32(intMaxHeight*aspect);
-                            }
-                            //-------------------------------------------
-
-                            cropImage = new Bitmap(newWidth, newHeight);
-                            var gc = Graphics.FromImage(cropImage);
-                            gc.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            gc.FillRectangle(Brushes.White, 0, 0, newWidth, newHeight);
-                            gc.DrawImage(sourceImage, 0, 0, newWidth, newHeight);
-
-                            var destinationRec = new Rectangle(0, 0, intMaxWidth, intMaxHeight);
-                            newImage = new Bitmap(intMaxWidth, intMaxHeight);
-                            var g = Graphics.FromImage(newImage);
-                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            g.FillRectangle(Brushes.White, 0, 0, intMaxWidth, intMaxHeight);
-                            g.DrawImage(cropImage, destinationRec, Convert.ToInt32((cropImage.Width - intMaxWidth)/2), Convert.ToInt32((cropImage.Height - intMaxHeight)/2), intMaxWidth, intMaxHeight, GraphicsUnit.Pixel);
+                            newWidth = intMaxWidth;
+                            newHeight = Convert.ToInt32(intMaxWidth/aspect);
                         }
 
-                        //use original width (no maxwidth given or image is narrow enough: 
+                        if (newWidth < intMaxWidth)
+                        {
+                            newWidth = intMaxWidth;
+                            newHeight = Convert.ToInt32(intMaxWidth/aspect);
+                        }
+                        if (newHeight < intMaxHeight)
+                        {
+                            newHeight = intMaxHeight;
+                            newWidth = Convert.ToInt32(intMaxHeight*aspect);
+                        }
+
+                        cropImage = new Bitmap(newWidth, newHeight);
+                        var gc = Graphics.FromImage(cropImage);
+                        gc.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        gc.DrawImage(sourceImage, 0, 0, newWidth, newHeight);
+
+                        var destinationRec = new Rectangle(0, 0, intMaxWidth, intMaxHeight);
+                        newImage = new Bitmap(intMaxWidth, intMaxHeight);
+                        var g = Graphics.FromImage(newImage);
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.DrawImage(cropImage, destinationRec, Convert.ToInt32((cropImage.Width - intMaxWidth)/2), Convert.ToInt32((cropImage.Height - intMaxHeight)/2), intMaxWidth, intMaxHeight, GraphicsUnit.Pixel);
                     }
                     else
                     {

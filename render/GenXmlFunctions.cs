@@ -2682,24 +2682,42 @@ namespace NBrightCore.render
             }
             else
             {
-                strOut += "( ([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', '" + sqlType;
-                if (sqlType == "datetime")
-                    strOut += "') >= convert(datetime,'" + searchFrom + "') ";
-                else if (sqlType.StartsWith("decimal"))
-                    strOut += "') >= " + searchFrom;
-                else
-                    strOut += "') >= '" + searchFrom + Convert.ToChar("'");
 
-                strOut += ") and ";
-                strOut += "([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', '" + sqlType;
                 if (sqlType == "datetime")
-                    strOut += "') <= convert(datetime,'" + searchTo + "') ";
-                else if (sqlType == "decimal")
-                    strOut += "') <= " + searchTo;
+                {
+                    strOut += "( ([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', '" + sqlType;
+                    strOut += "') >= convert(datetime,'" + searchFrom + "') ";
+                }
+                else if (sqlType.StartsWith("decimal"))
+                {
+                    strOut += "( (CAST(CASE WHEN ISNUMERIC ([" + dataField + "].value('(" + xpath + ")[1]', 'nvarchar(max)')) = 0 THEN 0 ELSE ";
+                    strOut += "[" + dataField + "].value('(" + xpath + ")[1]', 'decimal') END AS DECIMAL) >= " + searchFrom;
+                }
                 else
+                {
+                    strOut += "( ([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', '" + sqlType;
+                    strOut += "') >= '" + searchFrom + Convert.ToChar("'");
+                }
+                strOut += ") and ";
+                if (sqlType == "datetime")
+                {
+                    strOut += "([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', '" + sqlType;
+                    strOut += "') <= convert(datetime,'" + searchTo + "') ";
+                }
+                else if (sqlType == "decimal")
+                {
+                    strOut += " (CAST(CASE WHEN ISNUMERIC ([" + dataField + "].value('(" + xpath + ")[1]', 'nvarchar(max)')) = 0 THEN 0 ELSE ";
+                    strOut += "[" + dataField + "].value('(" + xpath + ")[1]', 'decimal') END AS DECIMAL) <= " + searchTo;
+                }
+                else
+                {
+                    strOut += "([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', '" + sqlType;
                     strOut += "') <= '" + searchTo + Convert.ToChar("'");
+                }
                 strOut += ") )";
             }
             //remove possible SQL injection commands
@@ -2722,9 +2740,9 @@ namespace NBrightCore.render
             else
             {
                 strOut += "([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', '" + sqlType;
+                strOut += ")[1]', 'nvarchar(max)";
                 strOut += "') = '" + searchText + Convert.ToChar("'");
-                strOut += ")";                
+                strOut += ")";
             }
 
             //remove possible SQL injection commands
@@ -2747,7 +2765,7 @@ namespace NBrightCore.render
             else
             {
                 strOut += "([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', '" + sqlType;
+                strOut += ")[1]', 'nvarchar(max)";
                 strOut += "') LIKE '%" + searchText + "%'";
                 strOut += ")";
             }
