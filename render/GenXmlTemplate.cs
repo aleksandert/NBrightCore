@@ -438,6 +438,10 @@ namespace NBrightCore.render
             {
                 lc.Text = xmlNod.Attributes["xpath"].InnerXml;
             }
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["displaytype"] != null))
+            {
+                lc.Text = lc.Text + ";" + xmlNod.Attributes["displaytype"].InnerXml;
+            }
 
             lc.DataBinding += ChkBoxListOfDataBinding;
             container.Controls.Add(lc);
@@ -1458,8 +1462,12 @@ namespace NBrightCore.render
 
             try
             {
+                var s = lc.Text.Split(';');
+                var xpath = s[0];
+                var displaytype = "";
+                if (s.Length > 1) displaytype = s[1]; 
                 lc.Visible = NBrightGlobal.IsVisible;
-                var xmlNod = GenXmlFunctions.GetGenXmLnode((string)DataBinder.Eval(container.DataItem, DatabindColumn), lc.Text);
+                var xmlNod = GenXmlFunctions.GetGenXmLnode((string)DataBinder.Eval(container.DataItem, DatabindColumn), s[0]);
                 lc.Text = "";
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
                 if (xmlNodeList != null)
@@ -1468,7 +1476,9 @@ namespace NBrightCore.render
                     {
                         if (xmlNoda.Attributes != null && xmlNoda.Attributes["value"] != null)
                         {
-                            if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
+                            if (displaytype == "")
+                            {
+                                                            if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
                             {
                                 lc.Text  += "[X] " + xmlNoda.InnerText + "<br/>"; 
                             }
@@ -1476,6 +1486,15 @@ namespace NBrightCore.render
                             {
                                 lc.Text += "[_] " + xmlNoda.InnerText + "<br/>";                                 
                             }
+                            }
+                            else
+                            {
+                                if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
+                                {
+                                    lc.Text += xmlNoda.InnerText + ", ";
+                                }                                
+                            }
+
                         }
                     }
                 }
