@@ -1472,31 +1472,42 @@ namespace NBrightCore.render
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
                 if (xmlNodeList != null)
                 {
+                    if (displaytype == "htmllist") lc.Text += "<ul>";
                     foreach (XmlNode xmlNoda in xmlNodeList)
                     {
                         if (xmlNoda.Attributes != null && xmlNoda.Attributes["value"] != null)
                         {
                             if (displaytype == "")
                             {
-                                                            if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
-                            {
-                                lc.Text  += "[X] " + xmlNoda.InnerText + "<br/>"; 
+                                if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
+                                {
+                                    lc.Text += "[X] " + xmlNoda.InnerText + "<br/>";
+                                }
+                                else
+                                {
+                                    lc.Text += "[_] " + xmlNoda.InnerText + "<br/>";
+                                }
                             }
-                            else
+                            else if (displaytype == "htmllist")
                             {
-                                lc.Text += "[_] " + xmlNoda.InnerText + "<br/>";                                 
-                            }
+                                if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
+                                {
+                                    lc.Text += "<li>" + xmlNoda.InnerText + "</li>";
+                                }
                             }
                             else
                             {
                                 if (xmlNoda.Attributes["value"].Value.ToLower() == "true")
                                 {
                                     lc.Text += xmlNoda.InnerText + ", ";
-                                }                                
+                                }
                             }
 
                         }
                     }
+                    if (displaytype == "htmllist") lc.Text += "</ul>";
+                    // remove the html list if we don;t have anything selected
+                    if (lc.Text == "<ul></ul>") lc.Text = "";
                 }
             }
             catch (Exception)
