@@ -895,6 +895,11 @@ namespace NBrightCore.render
                 fup.Width = Convert.ToInt16(xmlNod.Attributes["width"].InnerXml);
             }
 
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["deletefile"] != null))
+            {
+                fup.Attributes.Add("deletefile", xmlNod.Attributes["deletefile"].InnerText.ToLower());
+            }
+
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
             txt.Enabled = GetRoleEnabled(xmlNod.OuterXml);
 
@@ -902,6 +907,8 @@ namespace NBrightCore.render
             {
                 txt.Visible = false;
             }
+
+            fup.DataBinding += FileUploadBinding;  // we might want to hide it with the "testof token"
 
             fup.Visible = GetRoleVisible(xmlNod.OuterXml);
             fup.Enabled = GetRoleEnabled(xmlNod.OuterXml);
@@ -925,6 +932,20 @@ namespace NBrightCore.render
             hidInfo.DataBinding += HiddenDataBinding;
             container.Controls.Add(hidInfo);
         }
+
+        private void FileUploadBinding(object sender, EventArgs e)
+        {
+            var fu = (FileUpload)sender;
+            try
+            {
+                fu.Visible = NBrightGlobal.IsVisible;
+            }
+            catch (Exception)
+            {
+                //do nothing
+            }
+        }
+
 
         private static HiddenField GetPostBackCtrl(XmlNode xmlNod)
         {

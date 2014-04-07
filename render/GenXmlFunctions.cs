@@ -233,17 +233,21 @@ namespace NBrightCore.render
                                     // only delete if language is not used or matching.
                                     if (g.StartsWith(lang + "_"))
                                     {
-                                        Utils.DeleteSysFile(folderMapPath.TrimEnd(Convert.ToChar("\\")) + "\\" + g);
-                                        if (!String.IsNullOrEmpty(GetHiddenField(rpItem, "Thumbsize")))
+                                        //check if we've turned off deletefile
+                                        if (fup.Attributes["deletefile"] == null || fup.Attributes["deletefile"].ToLower() == "true")
                                         {
-                                            var tbSize = GetHiddenField(rpItem, "Thumbsize").Split(',');
-                                            foreach (var tb in tbSize)
+                                            Utils.DeleteSysFile(folderMapPath.TrimEnd(Convert.ToChar("\\")) + "\\" + g);
+                                            if (!String.IsNullOrEmpty(GetHiddenField(rpItem, "Thumbsize")))
                                             {
-                                                Utils.DeleteSysFile(
-                                                    ImgUtils.GetThumbFilePathName(folderMapPath.TrimEnd(Convert.ToChar(@"\")) + "\\" + g,
-                                                                                  ImgUtils.GetThumbWidth(tb), ImgUtils.GetThumbHeight(tb)));
-                                            }
+                                                var tbSize = GetHiddenField(rpItem, "Thumbsize").Split(',');
+                                                foreach (var tb in tbSize)
+                                                {
+                                                    Utils.DeleteSysFile(
+                                                        ImgUtils.GetThumbFilePathName(folderMapPath.TrimEnd(Convert.ToChar(@"\")) + "\\" + g,
+                                                                                      ImgUtils.GetThumbWidth(tb), ImgUtils.GetThumbHeight(tb)));
+                                                }
 
+                                            }
                                         }
                                     }
                                 }
