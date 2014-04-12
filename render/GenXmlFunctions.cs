@@ -594,13 +594,13 @@ namespace NBrightCore.render
         public static double GetFieldAsDouble(Repeater rpData, string fieldId, int rowIndex = 0)
         {
             var strTemp = GetField(rpData, fieldId, rowIndex);
-            return Utils.IsNumeric(strTemp) ? Convert.ToDouble(strTemp) : 0;
+            return Utils.IsNumeric(strTemp,Utils.GetCurrentCulture()) ? Convert.ToDouble(strTemp) : 0;
         }
 
         public static double GetFieldAsDouble(RepeaterItem rpItem, string fieldId)
         {
             var strTemp = GetField(rpItem, fieldId);
-            return Utils.IsNumeric(strTemp) ? Convert.ToDouble(strTemp) : 0;
+            return Utils.IsNumeric(strTemp, Utils.GetCurrentCulture()) ? Convert.ToDouble(strTemp) : 0;
         }
 
         public static string GetField(Repeater rpData, string fieldId, int rowIndex = 0)
