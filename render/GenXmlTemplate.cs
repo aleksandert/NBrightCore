@@ -176,6 +176,9 @@ namespace NBrightCore.render
                             ctrltype = xmlNod.Attributes["ctrltype"].InnerXml.ToLower();
                         }
 
+                        // Function types can only be processed by token providers, therefore force the core to pass it to a provider.
+                        // This is usually used for "testof" where we want the the provider to do a special test "function". 
+                        if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["function"] != null))) ctrltype = "function:" + ctrltype;
 
                         if (!string.IsNullOrEmpty(ctrltype))
                         {
@@ -302,6 +305,8 @@ namespace NBrightCore.render
                                     }
                                     break;
                                 default:
+
+                                    ctrltype = ctrltype.Replace("function:", ""); //remove a force function test.
 
                                     var providerCtrl = false;
 
