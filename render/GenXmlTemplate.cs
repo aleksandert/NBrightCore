@@ -891,10 +891,6 @@ namespace NBrightCore.render
             {
                 txt.MaxLength = Convert.ToInt16(xmlNod.Attributes["maxlength"].InnerXml);
             }
-            else
-            {
-                txt.MaxLength = 50;
-            }
             if (xmlNod.Attributes != null && (xmlNod.Attributes["width"] != null))
             {
                 fup.Width = Convert.ToInt16(xmlNod.Attributes["width"].InnerXml);
@@ -1569,6 +1565,7 @@ namespace NBrightCore.render
                 }
                 lc.Text = System.Web.HttpUtility.HtmlEncode(lc.Text);
                 lc.Text = lc.Text.Replace(Environment.NewLine, "<br/>");
+                lc.Text = lc.Text.Replace("'", "&apos;");
 
             }
             catch (Exception)
