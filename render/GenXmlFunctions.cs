@@ -299,11 +299,6 @@ namespace NBrightCore.render
                                     SetHiddenField(rpItem, "hid" + fup.ID, strGuid);
                                 }
 
-                                if (String.IsNullOrEmpty(GetField(rpItem, "txt" + fup.ID)))
-                                {
-                                    SetField(rpItem, "txt" + fup.ID, Path.GetFileName(strFileUploadName));
-                                }
-
                                 FileHasBeenUploaded(); // trigger event so file sync can be done if required.
 
                             }
