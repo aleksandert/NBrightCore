@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -1565,6 +1564,7 @@ namespace NBrightCore.render
                 }
                 lc.Text = System.Web.HttpUtility.HtmlEncode(lc.Text);
                 lc.Text = lc.Text.Replace(Environment.NewLine, "<br/>");
+                lc.Text = lc.Text.Replace("\t", "&nbsp;&nbsp;&nbsp;");
                 lc.Text = lc.Text.Replace("'", "&apos;");
 
             }
