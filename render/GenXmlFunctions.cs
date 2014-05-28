@@ -927,6 +927,7 @@ namespace NBrightCore.render
             //   turning off viewstate in control creation works, but turning viewstate on in databind does not work for a dropdownlist??...like to find out why, but not got the time!)
             foreach (Control ctrl in rpItem.Controls)
             {
+                if (ctrl is Literal) continue;
                 if (ctrl is DropDownList)
                 {
                     var ctl = (DropDownList) ctrl;
@@ -934,29 +935,30 @@ namespace NBrightCore.render
                 }
                 else if (ctrl is CheckBoxList)
                 {
-                    var ctl = (CheckBoxList)ctrl;
+                    var ctl = (CheckBoxList) ctrl;
                     if (ctl.Enabled & ctl.Visible) chkCtrls.Add(ctrl);
                 }
                 else if (ctrl is CheckBox)
                 {
-                    var ctl = (CheckBox)ctrl;
+                    var ctl = (CheckBox) ctrl;
                     if (ctl.Enabled & ctl.Visible) chkboxCtrls.Add(ctrl);
                 }
                 else if (ctrl is TextBox)
                 {
-                    var ctl = (TextBox)ctrl;
+                    var ctl = (TextBox) ctrl;
                     if (ctl.Enabled & ctl.Visible) txtCtrls.Add(ctrl);
                 }
                 else if (ctrl is RadioButtonList)
                 {
-                    var ctl = (RadioButtonList)ctrl;
+                    var ctl = (RadioButtonList) ctrl;
                     if (ctl.Enabled & ctl.Visible) rblCtrls.Add(ctrl);
                 }
                 else if (ctrl is HtmlGenericControl)
                 {
                     hidCtrls.Add(ctrl);
                     if (ctrl.ID.ToLower() == "lang")
-                    { // set lang , so file uploads are marked as multiple language (used to stop deletion)
+                    {
+                        // set lang , so file uploads are marked as multiple language (used to stop deletion)
                         var c = (HtmlGenericControl) ctrl;
                         lang = c.Attributes["value"];
                     }
