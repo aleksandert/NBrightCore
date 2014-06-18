@@ -2734,16 +2734,26 @@ namespace NBrightCore.render
             //remove SQL injection
             searchText = searchText.Replace("\'", "''");
 
-            if (xpath == "")
+            //loop on each word in search criteria
+            var words = searchText.Replace("  ", " ").Split(' ');
+            var lp = 1;
+            foreach (var word in words)
             {
-                strOut += " " + dataField + " = '" + searchText + "' ";
-            }
-            else
-            {
-                strOut += "([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', 'nvarchar(max)";
-                strOut += "') = '" + searchText + Convert.ToChar("'");
+                if (lp >= 2) strOut += " and ";
+                strOut += "(";
+                if (xpath == "")
+                {
+                    strOut += " " + dataField + " = '" + searchText + "' ";
+                }
+                else
+                {
+                    strOut += "([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', 'nvarchar(max)";
+                    strOut += "') = '" + searchText + Convert.ToChar("'");
+                    strOut += ")";
+                }
                 strOut += ")";
+                lp = lp + 1;
             }
 
             //remove possible SQL injection commands
@@ -2759,17 +2769,28 @@ namespace NBrightCore.render
             //remove SQL injection
             searchText = searchText.Replace("\'", "''");
 
-            if (xpath == "")
+            //loop on each word in search criteria
+            var words = searchText.Replace("  ", " ").Split(' ');
+            var lp = 1;
+            foreach (var word in words)
             {
-                strOut += " " + dataField + " Like '%" + searchText + "%' ";
-            }
-            else
-            {
-                strOut += "([" + dataField + "].value('(" + xpath;
-                strOut += ")[1]', 'nvarchar(max)";
-                strOut += "') LIKE '%" + searchText + "%'";
+                if (lp >= 2) strOut += " and ";
+                strOut += "(";
+                if (xpath == "")
+                {
+                    strOut += " " + dataField + " Like '%" + word + "%' ";
+                }
+                else
+                {
+                    strOut += "([" + dataField + "].value('(" + xpath;
+                    strOut += ")[1]', 'nvarchar(max)";
+                    strOut += "') LIKE '%" + word + "%'";
+                    strOut += ")";
+                }
                 strOut += ")";
+                lp = lp + 1;
             }
+
             //remove possible SQL injection commands
             strOut = StripSqlCommands(strOut);
 
