@@ -150,6 +150,7 @@ namespace NBrightCore.render
 
             var xmlDoc = new XmlDocument();
             string ctrltype = "";
+            string tokennamespace = "";
 
             for (var lp = 0; lp <= AryTempl.GetUpperBound(0); lp++)
             {
@@ -307,6 +308,10 @@ namespace NBrightCore.render
 
                                     ctrltype = ctrltype.Replace("function:", ""); //remove a force function test.
 
+                                    // use a token namespace if we specify a namepace tag (this is so we can use multiple provider extensions and have unique token names)
+                                    if (ctrltype == "tokennamespace" && (xmlNod != null && xmlNod.Attributes != null && (xmlNod.Attributes["value"] != null))) tokennamespace = xmlNod.Attributes["value"].InnerText;
+                                    if (!ctrltype.Contains(":") && tokennamespace.Trim() != "") ctrltype = tokennamespace.TrimEnd(':') + ":" + ctrltype;
+
                                     var providerCtrl = false;
 
                                     //check for any template providers.
@@ -324,7 +329,7 @@ namespace NBrightCore.render
                                     }
 
 
-                                    if (providerCtrl == false)
+                                    if (providerCtrl == false && ctrltype != (tokennamespace.TrimEnd(':') + ":" + "tokennamespace")) //don;t display namespace tag
                                     {
                                         var lc = new Literal();
                                         xmlDoc.LoadXml(strXml);
