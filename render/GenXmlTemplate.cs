@@ -2091,13 +2091,20 @@ namespace NBrightCore.render
                     foreach (var r in _ResourcePath)
                     {
                         //add resource attribuutes to tag xml node.
-                        var rList = providers.CmsProviderManager.Default.GetResourceData(r, xmlNod.Attributes["resourcekey"].Value);
-                        foreach (var i in rList)
+                        try
                         {
-                            var aNod = xmlDoc.CreateAttribute(i.Key);
-                            aNod.Value = i.Value;
-                            xmlNod.Attributes.Append(aNod);
-                        }                        
+                            var rList = providers.CmsProviderManager.Default.GetResourceData(r, xmlNod.Attributes["resourcekey"].Value);
+                            foreach (var i in rList)
+                            {
+                                var aNod = xmlDoc.CreateAttribute(i.Key);
+                                aNod.Value = i.Value;
+                                xmlNod.Attributes.Append(aNod);
+                            }                        
+                        }
+                        catch (Exception)
+                        {
+                            //ignore the theme/folder may have been removed.
+                        }
                     }
 					var rNod = xmlNod.Attributes["resourcekey"];
 					xmlNod.Attributes.Remove(rNod);
