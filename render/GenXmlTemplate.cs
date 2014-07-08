@@ -252,6 +252,9 @@ namespace NBrightCore.render
                                         if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
                                     }
                                     break;
+                                case "culturecode":
+                                    CreateCultureCode(container, xmlNod);
+                                    break;
                                 case "textbox":
                                     CreateTextbox(container, xmlNod);
                                     break;
@@ -1131,6 +1134,12 @@ namespace NBrightCore.render
             container.Controls.Add(hid);
         }
 
+        private static void CreateCultureCode(Control container, XmlNode xmlNod)
+        {
+            var l = new Literal();
+            l.Text = Utils.GetCurrentCulture();
+            container.Controls.Add(l);
+        }
         /// <summary>
         /// This control is a asp hiddenfield, this allows a postback value to be returned to the server.
         /// The normal "hidden" type control in NBrightCore is a HtmlGenericField, which does not allow for a postback, when data is set by JS or JQuery.
