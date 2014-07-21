@@ -177,7 +177,7 @@ namespace NBrightCore.controls
 
             if (UseListDisplay)
             {
-                p = new NBrightPaging { PageNumber = "", PreText = "", Text = "", PostText = "<ul>" };
+                p = new NBrightPaging { PageNumber = "", PreText = "<ul>", Text = "", PostText = "" };
                 pageL.Add(p);                
             }
 
