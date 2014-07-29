@@ -39,7 +39,7 @@ namespace NBrightCore.controls
         private String _footerTemplate = "";
 
         /// <summary>
-        /// If set to true the new list format will be used, otherwise the legacy span system will be use.
+        /// If set to true the new list format will be used, otherwise the legacy span system will be use. 
         /// </summary>
         public Boolean UseListDisplay { get; set; }
 
@@ -106,7 +106,7 @@ namespace NBrightCore.controls
 
             // set the for default <span> diplay
             _headerTemplate = "<div class='" + CssPagingDiv + "'>";
-            _bodyTemplate = "[<tag type='valueof' databind='PreText' />][<tag id='cmdPg' type='linkbutton' Text='databind:Text' commandname='Page' commandargument='PageNumber' />][<tag type='valueof' databind='PostText' />]";
+            _bodyTemplate = "[<tag type='valueof' databind='PreText' />][<tag type='if' databind='Text' testvalue='' display='{OFF}' />][<tag id='cmdPg' type='linkbutton' Text='databind:Text' commandname='Page' commandargument='PageNumber' />][<tag type='endif' />][<tag type='valueof' databind='PostText' />]";
             _footerTemplate = "</div>";
         }
 
@@ -118,13 +118,14 @@ namespace NBrightCore.controls
         protected override void OnInit(EventArgs e)
         {
             base.OnInit(e);
-                RpData = new Repeater();
-                RpData.ItemCommand += new RepeaterCommandEventHandler(ClientItemCommand);
-                RpData.ItemTemplate = new GenXmlTemplate(_bodyTemplate);
 
-                this.Controls.AddAt(0, new LiteralControl(_footerTemplate));
-                this.Controls.AddAt(0, RpData);
-                this.Controls.AddAt(0, new LiteralControl(_headerTemplate));
+            RpData = new Repeater();
+            RpData.ItemCommand += new RepeaterCommandEventHandler(ClientItemCommand);
+            RpData.ItemTemplate = new GenXmlTemplate(_bodyTemplate);
+
+            this.Controls.AddAt(0, new LiteralControl(_footerTemplate));
+            this.Controls.AddAt(0, RpData);
+            this.Controls.AddAt(0, new LiteralControl(_headerTemplate));
         }
 
         public event RepeaterCommandEventHandler PageChanged;
@@ -158,12 +159,6 @@ namespace NBrightCore.controls
             if (lastPage == 1) return;            //if only one page, don;t process
 
             var pageL = new List<NBrightPaging>();
-
-            if (UseListDisplay)
-            {
-                this.Controls.AddAt(this.Controls.IndexOf(RpData), new LiteralControl("<ul>"));
-                this.Controls.AddAt(this.Controls.IndexOf(RpData) + 1, new LiteralControl("</ul>"));
-            }
             
             if (CurrentPage <= 0) CurrentPage = 1;
             NBrightPaging p;
@@ -179,6 +174,12 @@ namespace NBrightCore.controls
 
 
                 #region "header"
+
+            if (UseListDisplay)
+            {
+                p = new NBrightPaging { PageNumber = "", PreText = "<ul>", Text = "", PostText = "" };
+                pageL.Add(p);                
+            }
 
                 if ((lowNum != 1) && (CurrentPage > 1) && (TextFirst != ""))
                 {
@@ -235,6 +236,12 @@ namespace NBrightCore.controls
                 if ((lastPage != highNum) && (lastPage > CurrentPage) && (TextLast != ""))
                 {
                     p = new NBrightPaging { PageNumber = Convert.ToString(lastPage), PreText = "<" + listtype + " class='" + CssLastPage + "'>", Text = TextLast, PostText = "</" + listtype + ">" };
+                    pageL.Add(p);
+                }
+
+                if (UseListDisplay)
+                {
+                    p = new NBrightPaging { PageNumber = "", PreText = "", Text = "", PostText = "</ul>" };
                     pageL.Add(p);
                 }
 

@@ -1864,7 +1864,21 @@ namespace NBrightCore.render
                     nod.Attributes["value"].InnerText = newValue;
                 }
             }
+            else
+            {
+                var xpatharray = xPath.Split('@');
+                if (xpatharray.Count() == 2)
+                {
+                    var attrName = xpatharray[1];
+                    var oAtt = xmlDoc.CreateAttribute(attrName);
+                    oAtt.Value = newValue;
+
+                    nod = xmlDoc.SelectSingleNode(xpatharray[0].TrimEnd('/'));
+                    if (nod != null) nod.Attributes.Append(oAtt);                        
+                }
+            }
         }
+
 
         public static void ReplaceXmlNode(XmlDataDocument xmlDoc, string xPath, string newValue)
         {
