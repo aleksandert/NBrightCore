@@ -20,12 +20,12 @@ using NBrightCore.providers;
 namespace NBrightCore.render
 {
 
-    public delegate void UploadFileCompleted();
+    //public delegate void UploadFileCompleted();
 
     public class GenXmlFunctions
     {
 
-        public static event UploadFileCompleted FileHasBeenUploaded;
+        //public static event UploadFileCompleted FileHasBeenUploaded;
 
         public static void ForceDocDownload(Repeater rpData, string fileUploadId, string folderMapPath,
                                             HttpResponse response)
@@ -299,7 +299,9 @@ namespace NBrightCore.render
                                     SetHiddenField(rpItem, "hid" + fup.ID, strGuid);
                                 }
 
-                                FileHasBeenUploaded(); // trigger event so file sync can be done if required.
+
+                                // NOTE: This event creates a memory leak [TODO: find another way to do the resync of the filesystem]
+                                //FileHasBeenUploaded(); // trigger event so file sync can be done if required.
 
                             }
 
