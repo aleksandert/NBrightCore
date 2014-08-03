@@ -850,6 +850,8 @@ namespace NBrightCore.render
                 txt.Attributes.Add("format", xmlNod.Attributes["format"].InnerXml);
             }
 
+            txt.Attributes.Add("type", "text");
+
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
             txt.Enabled = GetRoleEnabled(xmlNod.OuterXml);
 
