@@ -1,6 +1,8 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using NBrightCore.render;
@@ -250,6 +252,30 @@ namespace NBrightCore.controls
             RpData.DataSource = pageL;
             RpData.DataBind();
 
+
+        }
+
+        public String RenderPager(int recordCount, int pageSize,int pageNumber)
+        {
+            UseListDisplay = true;
+            TotalRecords = recordCount;
+            PageSize = pageSize;
+            CurrentPage = pageNumber;
+    
+            //redefine template for ajax processing
+            _bodyTemplate = "[<tag type='valueof' databind='PreText' />]<a class='cmdPg' pagenumber='[<tag type='valueof' databind='PageNUmber' />]'>[<tag type='valueof' databind='Text' />]</a>[<tag type='valueof' databind='PostText' />]";
+
+            var e = new EventArgs();
+            OnInit(e);
+
+            BindPageLinks();
+
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            var htmlTw = new HtmlTextWriter(sw);
+            RenderControl(htmlTw);
+
+            return sb.ToString();
 
         }
 
