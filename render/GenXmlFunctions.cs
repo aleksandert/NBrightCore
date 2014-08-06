@@ -1495,7 +1495,7 @@ namespace NBrightCore.render
                             if (!IsAjaxGroup(nod.Attributes["id"].InnerText))
                             {
                                 var strValue = "False";
-                                if (nod.InnerText == "checked")
+                                if (nod.InnerText == "checked" || nod.InnerText.ToLower() == "true")
                                 {
                                     strValue = "True";
                                 }
@@ -1637,7 +1637,7 @@ namespace NBrightCore.render
                                 }
 
                                 var strValue = "False";
-                                if (nod.InnerText == "checked")
+                                if (nod.InnerText == "checked" || nod.InnerText.ToLower() == "true")
                                 {
                                     strValue = "True";
                                 }
