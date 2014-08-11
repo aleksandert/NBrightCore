@@ -81,7 +81,11 @@ namespace NBrightCore.common
 
         public static string GetCurrentCountryCode()
         {
-            return System.Threading.Thread.CurrentThread.CurrentCulture.Name.Substring(2, 2);
+            var cc = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            var c = cc.Split('-');
+            var rtn = "";
+            if (c.Length > 0) rtn = c[c.Length - 1];
+            return rtn;
         }
 
         public static string RequestParam(HttpContext context, string paramName)
