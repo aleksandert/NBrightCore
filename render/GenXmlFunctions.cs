@@ -764,29 +764,32 @@ namespace NBrightCore.render
         public static ListItemCollection GetFieldItemList(Repeater rpData, string fieldId, int rowIndex = 0)
         {
             var lic = new ListItemCollection();
+            if (rpData.Items.Count > 0)
+            {
                 var ctrl = rpData.Items[rowIndex].FindControl(fieldId);
                 if (ctrl is DropDownList)
                 {
-                    foreach (ListItem li in ((DropDownList)ctrl).Items)
+                    foreach (ListItem li in ((DropDownList) ctrl).Items)
                     {
                         lic.Add(li);
                     }
                 }
                 else if (ctrl is RadioButtonList)
                 {
-                    foreach (ListItem li in ((RadioButtonList)ctrl).Items)
+                    foreach (ListItem li in ((RadioButtonList) ctrl).Items)
                     {
                         lic.Add(li);
                     }
                 }
                 else if (ctrl is CheckBoxList)
                 {
-                    foreach (ListItem li in ((CheckBoxList)ctrl).Items)
+                    foreach (ListItem li in ((CheckBoxList) ctrl).Items)
                     {
                         lic.Add(li);
                     }
                 }
-                return lic;
+            }
+            return lic;
         }
 
 
@@ -1072,6 +1075,11 @@ namespace NBrightCore.render
                         strXml += "<" + hidCtrl.ID.ToLower() + " datatype=\"date\"><![CDATA[";
                         strXml += Utils.FormatToSave(hidCtrl.Value, TypeCode.DateTime);
                     }
+                    else if (hidCtrl.ID.ToLower().StartsWith("xml"))
+                    {
+                        strXml += "<" + hidCtrl.ID.ToLower() + " datatype=\"xml\"><![CDATA[";
+                        strXml += EncodeCDataTag(hidCtrl.Value);
+                    }
                     else
                     {
                         strXml += "<" + hidCtrl.ID.ToLower() + "><![CDATA[";
@@ -1088,8 +1096,7 @@ namespace NBrightCore.render
                 if (txtCtrl.Text.Contains("<![CDATA["))
                 {
                     //convert cdata marks so it saves OK into XML (will need converting back)
-                    txtCtrl.Text = txtCtrl.Text.Replace("<![CDATA[", "**CDATASTART**");
-                    txtCtrl.Text = txtCtrl.Text.Replace("]]>", "**CDATAEND**");
+                    txtCtrl.Text = EncodeCDataTag(txtCtrl.Text);
                 }
 
                 var dataTyp = "";
@@ -1353,6 +1360,16 @@ namespace NBrightCore.render
 
             return strXml;
 
+        }
+
+        public static String EncodeCDataTag(String xmlData)
+        {
+            return xmlData.Replace("<![CDATA[", "**CDATASTART**").Replace("]]>", "**CDATAEND**");
+        }
+
+        public static String DecodeCDataTag(String xmlData)
+        {
+            return xmlData.Replace("**CDATASTART**","<![CDATA[").Replace("**CDATAEND**","]]>");
         }
 
         public static string GetGenXmlByAjax(string xmlAjaxData, string originalXml, string lang = "en-GB", string xmlRootName = "genxml")
