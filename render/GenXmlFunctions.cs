@@ -255,13 +255,14 @@ namespace NBrightCore.render
                                 //see if we have a friendly file flag
                                 var strFriendlyName = GetHiddenField(rpItem, "FriendlyFileNames");
                                 var strFileUploadName = Utils.CleanInput(fup.FileName);
+                                var strhiddenFileName = GetHiddenField(rpItem, "HiddenFileNames");
 
                                 if (String.IsNullOrEmpty(strFriendlyName))
                                 {
                                     strGuid = Guid.NewGuid().ToString();
                                     var strExt = Path.GetExtension(strFileUploadName);
                                     if (String.IsNullOrEmpty(strExt)) strExt = "";
-                                    if (ImgUtils.IsImageFile(strExt) || (strExt == ".pdf") || (strExt == ".mp3"))
+                                    if ((ImgUtils.IsImageFile(strExt) || (strExt == ".pdf") || (strExt == ".mp3")) && !strhiddenFileName.Contains(strExt))
                                     {
                                         // is image/pdf/mp3 so assume it's save to use the extension.
                                         strGuid += strExt;
@@ -297,6 +298,7 @@ namespace NBrightCore.render
                                 {
                                     SetHiddenField(rpItem, "hidInfo" + fup.ID, ImgUtils.IsImageFile(Path.GetExtension(strFileUploadName)) ? "Img=True" : "Img=False");
                                     SetHiddenField(rpItem, "hid" + fup.ID, strGuid);
+                                    SetHiddenField(rpItem, "hidExt" + fup.ID, Path.GetExtension(strFileUploadName));
                                 }
 
 
