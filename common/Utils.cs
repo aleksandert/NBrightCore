@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Web;
 using System.Xml;
 using NBrightCore.providers;
@@ -76,12 +78,12 @@ namespace NBrightCore.common
 
         public static string GetCurrentCulture()
         {
-            return System.Threading.Thread.CurrentThread.CurrentCulture.ToString();
+            return Thread.CurrentThread.CurrentCulture.ToString();
         }
 
         public static string GetCurrentCountryCode()
         {
-            var cc = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+            var cc = Thread.CurrentThread.CurrentCulture.Name;
             var c = cc.Split('-');
             var rtn = "";
             if (c.Length > 0) rtn = c[c.Length - 1];
@@ -108,7 +110,7 @@ namespace NBrightCore.common
             return (result == null) ? String.Empty : result.Trim();
         }
 
-        public static string RequestQueryStringParam(System.Web.HttpRequest Request, string paramName)
+        public static string RequestQueryStringParam(HttpRequest Request, string paramName)
         {
             var result = String.Empty;
 
@@ -135,7 +137,7 @@ namespace NBrightCore.common
 
         public static void ForceDocDownload(string docFilePath, string fileName, HttpResponse response)
         {
-            if (File.Exists(docFilePath) & !string.IsNullOrEmpty(fileName))
+            if (File.Exists(docFilePath) & !String.IsNullOrEmpty(fileName))
             {
                 response.AppendHeader("content-disposition", "attachment; filename=" + fileName);
                 response.ContentType = "application/octet-stream";
@@ -160,7 +162,7 @@ namespace NBrightCore.common
 
         public static string FormatToSave(string inpData, TypeCode dataTyp)
         {
-            if (string.IsNullOrEmpty(inpData))
+            if (String.IsNullOrEmpty(inpData))
                 return inpData;
             switch (dataTyp)
             {
@@ -179,7 +181,7 @@ namespace NBrightCore.common
                     }
                     return "0";
                 case TypeCode.DateTime:
-                    if (Utils.IsDate(inpData))
+                    if (IsDate(inpData))
                     {
                         var dte = Convert.ToDateTime(inpData);
                         return dte.ToString("s");
@@ -197,7 +199,7 @@ namespace NBrightCore.common
 
         public static string FormatToDisplay(string inpData, string cultureCode, TypeCode dataTyp, string formatCode = "")
         {
-            if (string.IsNullOrEmpty(inpData))
+            if (String.IsNullOrEmpty(inpData))
             {
                 if (dataTyp == TypeCode.Double)
                 {
@@ -211,11 +213,11 @@ namespace NBrightCore.common
                 case TypeCode.Double:
                     if (IsNumeric(inpData))
                     {
-                        return double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode, outCulture);                            
+                        return Double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode, outCulture);                            
                     }
                     return "0";
                 case TypeCode.DateTime:
-                    if (Utils.IsDate(inpData))
+                    if (IsDate(inpData))
                     {
                         if (formatCode == "") formatCode = "d";
                         return DateTime.Parse(inpData).ToString(formatCode, outCulture);
@@ -339,7 +341,7 @@ namespace NBrightCore.common
         /// </summary>
         /// <param name="InpStream"></param>
         /// <returns></returns>
-        public static string InputStreamToString(System.IO.Stream InpStream)
+        public static string InputStreamToString(Stream InpStream)
         {
             // Create a Stream object.
             // Find number of bytes in stream.
@@ -349,7 +351,7 @@ namespace NBrightCore.common
             // Read stream into byte array.
             InpStream.Read(strArr, 0, strLen);
             // Convert byte array to a text string.
-            var strmContents = System.Text.Encoding.UTF8.GetString(strArr);
+            var strmContents = Encoding.UTF8.GetString(strArr);
             return strmContents;
         }
 
@@ -358,7 +360,7 @@ namespace NBrightCore.common
         /// </summary>
         /// <param name="InpStream"></param>
         /// <returns></returns>
-        public static string Base64StreamToString(System.IO.Stream InpStream)
+        public static string Base64StreamToString(Stream InpStream)
         {
             // Create a Stream object.
             // Find number of bytes in stream.
@@ -373,7 +375,7 @@ namespace NBrightCore.common
 
         public static MemoryStream Base64StringToStream(string inputStr)
         {
-            var myByte = System.Convert.FromBase64String(inputStr);
+            var myByte = Convert.FromBase64String(inputStr);
             var theMemStream = new MemoryStream();
             theMemStream.Write(myByte, 0, myByte.Length);
             return theMemStream;
@@ -382,24 +384,24 @@ namespace NBrightCore.common
         public static Image SaveImgBase64ToFile(string FileMapPath, string strBase64Img)
         {
             // Save the image to a file.
-            var mem = Utils.Base64StringToStream(strBase64Img);
+            var mem = Base64StringToStream(strBase64Img);
             Image pic = Image.FromStream(mem);
             var fPath = FileMapPath;
             if (fPath.ToLower().EndsWith(".gif"))
             {
-                pic.Save(fPath, System.Drawing.Imaging.ImageFormat.Gif);
+                pic.Save(fPath, ImageFormat.Gif);
             }
             else if (fPath.ToLower().EndsWith(".jpg") | fPath.ToLower().EndsWith(".jpeg"))
             {
-                pic.Save(fPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                pic.Save(fPath, ImageFormat.Jpeg);
             }
             else if (fPath.ToLower().EndsWith(".png"))
             {
-                pic.Save(fPath, System.Drawing.Imaging.ImageFormat.Png);
+                pic.Save(fPath, ImageFormat.Png);
             }
             else
             {
-                pic.Save(fPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                pic.Save(fPath, ImageFormat.Jpeg);
             }
             return pic;
         }
@@ -408,7 +410,7 @@ namespace NBrightCore.common
         public static void SaveBase64ToFile(string FileMapPath, string strBase64)
         {
             // Save the image to a file.
-            var mem = Utils.Base64StringToStream(strBase64);
+            var mem = Base64StringToStream(strBase64);
 
             FileStream outStream = File.OpenWrite(FileMapPath);
             mem.WriteTo(outStream);
@@ -428,7 +430,7 @@ namespace NBrightCore.common
         {
             var functionReturnValue = "";
 
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(email.Trim(Convert.ToChar(" "))))
+            if (!String.IsNullOrEmpty(email) && !String.IsNullOrEmpty(email.Trim(Convert.ToChar(" "))))
             {
                 if (email.IndexOf(Convert.ToChar("@")) != -1)
                 {
@@ -474,7 +476,7 @@ namespace NBrightCore.common
                     sbScript.Append("</script>");
                     return sbScript.ToString();
                 }
-                return string.Format("document.write(String.fromCharCode({0}))", sb);
+                return String.Format("document.write(String.fromCharCode({0}))", sb);
             }
             return "";
         }
@@ -608,15 +610,15 @@ namespace NBrightCore.common
     	/// <param name="configNameCSV">CSV list of sectiuonnames to be returned, "" for all</param>
     	/// <param name="AdvancedFlag">Flag to select advanced settings "1"=Advanved Only, "0"=Simple Only,""=All </param>
     	/// <returns>Dictionary of all config settings</returns>
-    	public static Dictionary<String,NBrightSetting> ConfigBuildDictionary(String DefaultConfigMapPath, String SecondaryConfigMapPath,String configNameCSV = "", String AdvancedFlag = "")
+    	public static Dictionary<string, NBrightSetting> ConfigBuildDictionary(String DefaultConfigMapPath, String SecondaryConfigMapPath,String configNameCSV = "", String AdvancedFlag = "")
         {
-            var outDict = new Dictionary<String, NBrightSetting>();
+            var outDict = new Dictionary<string, NBrightSetting>();
 
             if (File.Exists(DefaultConfigMapPath))
             {
 
-                var xmlConfigDoc = new System.Xml.XmlDataDocument();
-                System.Xml.XmlNodeList xmlNodList = null;
+                var xmlConfigDoc = new XmlDataDocument();
+                XmlNodeList xmlNodList = null;
                 xmlConfigDoc.Load(DefaultConfigMapPath);
 
                 if (configNameCSV == "")
@@ -669,7 +671,7 @@ namespace NBrightCore.common
                 //overwrite with secondary file data
                 if (File.Exists(SecondaryConfigMapPath))
                 {
-                    xmlConfigDoc = new System.Xml.XmlDataDocument();
+                    xmlConfigDoc = new XmlDataDocument();
                     xmlConfigDoc.Load(SecondaryConfigMapPath);
                     foreach (var configName in configNameCSV.Split(','))
                     {
@@ -718,9 +720,9 @@ namespace NBrightCore.common
 		/// </summary>
 		/// <param name="DefaultConfigDictionary">Dictionary of all Config settings. (Created by ConfigBuildDictionary function)</param>
 		/// <returns></returns>
-		public static  List<String> ConfigBuildSectionList(Dictionary<String, NBrightSetting> DefaultConfigDictionary)
+		public static  List<string> ConfigBuildSectionList(Dictionary<string, NBrightSetting> DefaultConfigDictionary)
 		{
-			var outL = new List<String>();
+			var outL = new List<string>();
 
 			foreach (var i in DefaultConfigDictionary)
 			{
@@ -741,7 +743,7 @@ namespace NBrightCore.common
         /// <param name="settingDict">Dictionary of Settings</param>
 		/// <param name="sectionName">Name of the config section to edit (e.g. "products")</param>
 		/// <returns>String html nbright template for displaying settings options</returns>
-        public static String ConfigConvertToTemplate(Dictionary<String, NBrightSetting> settingDict,String sectionName)
+        public static String ConfigConvertToTemplate(Dictionary<string, NBrightSetting> settingDict,String sectionName)
 		{
 			var strTempl = "";
 
@@ -784,7 +786,7 @@ namespace NBrightCore.common
 		/// </summary>
 		/// <param name="xmlConfig"></param>
 		/// <returns></returns>
-		public static System.Xml.XmlDataDocument ConfigConvertToXml()
+		public static XmlDataDocument ConfigConvertToXml()
 		{
 			var xmlDoc = new XmlDataDocument();
 
@@ -797,12 +799,12 @@ namespace NBrightCore.common
         /// <param name="strTemplate">Template txt to be searched</param>
         /// <param name="settingsDic">Dictionary of settings</param>
         /// <returns></returns>
-        public static string ReplaceSettingTokens(string strTemplate, Dictionary<String, String> settingsDic)
+        public static string ReplaceSettingTokens(string strTemplate, Dictionary<string, string> settingsDic)
         {
             const string tokenTag = "Settings:";
             if (strTemplate.Contains(tokenTag))
             {
-                var aryTempl = Utils.ParseTemplateText(strTemplate);
+                var aryTempl = ParseTemplateText(strTemplate);
                 foreach (var s in aryTempl)
                 {
                     if (s.StartsWith(tokenTag))
@@ -816,7 +818,7 @@ namespace NBrightCore.common
                 }
 
                 //Search for {Settings:*}, this token may be used within a tag [] token
-                aryTempl = Utils.ParseTemplateText(strTemplate, "{", "}");
+                aryTempl = ParseTemplateText(strTemplate, "{", "}");
                 foreach (var s in aryTempl)
                 {
                     if (s.StartsWith(tokenTag))
@@ -841,18 +843,34 @@ namespace NBrightCore.common
             const string tokenTag = "Url:";
             if (strTemplate.Contains(tokenTag))
             {
-                var aryTempl = Utils.ParseTemplateText(strTemplate);
+                var aryTempl = ParseTemplateText(strTemplate);
                 foreach (var s in aryTempl)
                 {
                     if (s.StartsWith(tokenTag))
                     {
                         var urlparam = s.Replace(tokenTag, "").Replace("]", "");
-                        strTemplate = strTemplate.Replace(s, Utils.RequestParam(HttpContext.Current, urlparam));
+                        strTemplate = strTemplate.Replace(s, RequestParam(HttpContext.Current, urlparam));
                     }
                 }
             }
             return strTemplate;
         }
 
+        public static string GetUniqueKey(int maxSize = 8)
+        {
+            var a = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+            var chars = a.ToCharArray();
+            var data = new byte[1];
+            var crypto = new RNGCryptoServiceProvider();
+            crypto.GetNonZeroBytes(data);
+            data = new byte[maxSize];
+            crypto.GetNonZeroBytes(data);
+            var result = new StringBuilder(maxSize);
+            foreach (byte b in data)
+            {
+                result.Append(chars[b % (chars.Length - 1)]);
+            }
+            return result.ToString();
+        }
     }
 }

@@ -850,7 +850,27 @@ namespace NBrightCore.render
                 txt.Attributes.Add("format", xmlNod.Attributes["format"].InnerXml);
             }
 
-            txt.Attributes.Add("type", "text");
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["required"] != null))
+            {
+                txt.Attributes.Add("required", xmlNod.Attributes["required"].InnerXml);
+            }
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["datatype"] != null) && xmlNod.Attributes["datatype"].InnerXml == "email")
+            {
+                txt.Attributes.Add("type", "email");
+            }
+            else if (xmlNod.Attributes != null && (xmlNod.Attributes["datatype"] != null) && xmlNod.Attributes["datatype"].InnerXml == "url")
+            {
+                txt.Attributes.Add("type", "url");
+            }
+            else if (xmlNod.Attributes != null && (xmlNod.Attributes["datatype"] != null) && xmlNod.Attributes["datatype"].InnerXml == "date")
+            {
+                txt.Attributes.Add("type", "date");
+            }
+            else
+            {
+                txt.Attributes.Add("type", "text");
+            }
 
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
             txt.Enabled = GetRoleEnabled(xmlNod.OuterXml);
