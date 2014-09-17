@@ -479,6 +479,10 @@ namespace NBrightCore.render
         private void CreateHtmlOf(Control container, XmlNode xmlNod)
         {
             var lc = new Literal();
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["Text"] != null))
+            {
+                lc.Text = "resxdata:" + xmlNod.Attributes["Text"].InnerXml;
+            }
             if (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null))
             {
                 lc.Text = xmlNod.Attributes["xpath"].InnerXml;
@@ -1767,20 +1771,29 @@ namespace NBrightCore.render
             try
             {
                 lc.Visible = NBrightGlobal.IsVisible;
-                if (lc.Text.ToLower().StartsWith("databind:"))
+                if (lc.Text.ToLower().StartsWith("resxdata:"))
                 {
-                    lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
+                    //Text data passed as resx, so display it.
+                    lc.Text = System.Web.HttpUtility.HtmlDecode(lc.Text.Replace("resxdata:", ""));
                 }
                 else
                 {
-                    var nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), lc.Text);
-                    if ((nod != null))
+
+                    if (lc.Text.ToLower().StartsWith("databind:"))
                     {
-                        lc.Text = System.Web.HttpUtility.HtmlDecode(nod.InnerText);
+                        lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
                     }
                     else
                     {
-                        lc.Text = "";
+                        var nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), lc.Text);
+                        if ((nod != null))
+                        {
+                            lc.Text = System.Web.HttpUtility.HtmlDecode(nod.InnerText);
+                        }
+                        else
+                        {
+                            lc.Text = "";
+                        }
                     }
                 }
             }
