@@ -196,6 +196,9 @@ namespace NBrightCore.render
                                 case "linkbutton":
                                     CreateLinkButton(container, xmlNod);
                                     break;
+                                case "button":
+                                    CreateButton(container, xmlNod);
+                                    break;
                                 case "translatebutton":
                                     CreateTransButton(container, xmlNod);
                                     break;
@@ -2081,6 +2084,75 @@ namespace NBrightCore.render
                 //do nothing
             }
         }
+
+        #endregion
+
+        #region "button"
+
+        private void CreateButton(Control container, XmlNode xmlNod)
+        {
+            var cmd = new Button();
+            cmd = (Button)GenXmlFunctions.AssignByReflection(cmd, xmlNod);
+
+            cmd.Visible = GetRoleVisible(xmlNod.OuterXml);
+            cmd.Enabled = GetRoleEnabled(xmlNod.OuterXml);
+
+            cmd.DataBinding += ButtonDataBinding;
+            container.Controls.Add(cmd);
+        }
+
+        private void ButtonDataBinding(object sender, EventArgs e)
+        {
+            var cmd = (Button)sender;
+            var container = (IDataItemContainer)cmd.NamingContainer;
+            try
+            {
+                cmd.Visible = NBrightGlobal.IsVisible;
+
+                if (cmd.Text.ToLower().StartsWith("databind:"))
+                {
+                    // If using for repeated linkbutton, we can datbind the text (e.g. for paging) 
+                    if ((DataBinder.Eval(container.DataItem, cmd.Text.Replace("databind:", "")) != null))
+                    {
+                        //dataitem value matching commandarg name 
+                        cmd.Text = Convert.ToString(DataBinder.Eval(container.DataItem, cmd.Text.Replace("databind:", "")));
+                    }
+                }
+
+                if ((DataBinder.Eval(container.DataItem, cmd.CommandArgument) != null))
+                {
+                    //dataitem value matching commandarg name 
+                    cmd.CommandArgument = Convert.ToString(DataBinder.Eval(container.DataItem, cmd.CommandArgument));
+                }
+                else
+                {
+                    //no value in dataitem matching commandarg name so search xml values
+                    var nod = GenXmlFunctions.GetGenXmLnode(cmd.ID, cmd.Text, Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn)));
+                    if ((nod != null))
+                    {
+                        cmd.CommandArgument = nod.InnerXml;
+                    }
+                    else
+                    {
+                        nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), cmd.Text);
+                        if (nod != null)
+                        {
+                            cmd.CommandArgument = nod.InnerXml;
+                        }
+                        else
+                        {
+                            cmd.CommandArgument = "";
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                //do nothing
+            }
+        }
+
+
 
         #endregion
 
