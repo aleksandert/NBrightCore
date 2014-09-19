@@ -1004,13 +1004,21 @@ namespace NBrightCore.render
             strXml += "<" + xmlRootName + ">";
 
             //Process embeded repeaters by recussion
-            strXml += "<repeater>";
-            foreach (var control in repeaterCtrls)
+            if (repeaterCtrls.Count > 0)
             {
-                var rpCtrl = (Repeater) control;
-                strXml += GetGenXml(rpCtrl);
+                strXml += "<repeaters>";
+                foreach (var rptctrl in repeaterCtrls)
+                {
+                    var rpCtrl = (Repeater)rptctrl;
+                    strXml += "<repeater>";
+                    foreach (RepeaterItem i in rpCtrl.Items)
+                    {
+                        strXml += GetGenXml(i);
+                    }
+                    strXml += "</repeater>";
+                }
+                strXml += "</repeaters>";                
             }
-            strXml += "</repeater>";
 
 
             //Upload any files that have been selected
