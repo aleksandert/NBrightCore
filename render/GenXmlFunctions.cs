@@ -924,6 +924,8 @@ namespace NBrightCore.render
             var fupCtrls = new List<Control>();
             var chkboxCtrls = new List<Control>();
             var genCtrls = new List<Control>();
+            var repeaterCtrls = new List<Control>();
+            
             var lang = "";
 
             var providerList = GenXProviderManager.ProviderList;
@@ -960,6 +962,11 @@ namespace NBrightCore.render
                     var ctl = (RadioButtonList) ctrl;
                     if (ctl.Enabled & ctl.Visible) rblCtrls.Add(ctrl);
                 }
+                else if (ctrl is Repeater)
+                {
+                    var ctl = (Repeater)ctrl;
+                    if (ctl.Visible) repeaterCtrls.Add(ctrl);
+                }
                 else if (ctrl is HtmlGenericControl)
                 {
                     hidCtrls.Add(ctrl);
@@ -995,6 +1002,16 @@ namespace NBrightCore.render
             //Create XML
             var strXml = "";
             strXml += "<" + xmlRootName + ">";
+
+            //Process embeded repeaters by recussion
+            strXml += "<repeater>";
+            foreach (var control in repeaterCtrls)
+            {
+                var rpCtrl = (Repeater) control;
+                strXml += GetGenXml(rpCtrl);
+            }
+            strXml += "</repeater>";
+
 
             //Upload any files that have been selected
             strXml += "<files>";
@@ -2424,6 +2441,7 @@ namespace NBrightCore.render
 
             return sb.ToString();
         }
+
 
         public static string GetGenControlPropety(string xmLproperties, string propertyname)
         {
