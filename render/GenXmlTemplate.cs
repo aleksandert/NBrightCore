@@ -248,6 +248,9 @@ namespace NBrightCore.render
                                 case "postback":
                                     CreatePostBack(container, xmlNod);
                                     break;
+                                case "currentculture":
+                                    CreateCurrentCulture(container, xmlNod);
+                                    break;
                                 case "const":
                                     CreateConst(container, xmlNod);
                                     if ((xmlNod != null) && (xmlNod.Attributes != null) && (xmlNod.Attributes["id"] != null) && (xmlNod.Attributes["value"] != null))
@@ -1186,6 +1189,24 @@ namespace NBrightCore.render
             }
             container.Controls.Add(hid);
         }
+
+        /// <summary>
+        /// create a hidden field that represents the current culture code, usualy for ajax calls whcih don't have langauge context.
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="xmlNod"></param>
+        private void CreateCurrentCulture(Control container, XmlNode xmlNod)
+        {
+            var hid = new HtmlGenericControl("input");
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["id"] != null))
+                hid.ID = xmlNod.Attributes["id"].InnerXml.ToLower();
+            else
+                hid.Attributes.Add("id", "lang");
+            hid.Attributes.Add("type", "hidden");
+            hid.Attributes.Add("value", Utils.GetCurrentCulture());
+            container.Controls.Add(hid);
+        }
+        
 
         private void CreateHidden(Control container, XmlNode xmlNod)
         {
