@@ -882,6 +882,10 @@ namespace NBrightCore.render
                 txt.Attributes.Add("type", "text");
             }
 
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["placeholder"] != null)) txt.Attributes.Add("placeholder", xmlNod.Attributes["placeholder"].InnerXml);
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["disabled"] != null)) txt.Attributes.Add("disabled", xmlNod.Attributes["disabled"].InnerXml);
+
+
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
             txt.Enabled = GetRoleEnabled(xmlNod.OuterXml);
 
