@@ -101,13 +101,23 @@ namespace NBrightCore.TemplateEngine
 
         }
 
-        public void SaveTemplate(string templatename, string lang, string templatedata)
+        public void SaveTemplate(string templatename, string lang, string templatedata, Boolean portallevel = true)
         {
             // save the template on secondary folder (usually portal in multiportal system)
             if (TemplCtrl1 != null)
-                TemplCtrl2.SaveTemplate(templatename,lang,templatedata); // save in custom theme
+            {
+                if (portallevel)  // normally only save templates at portal level (So they override default template at module level, but don't overwrite them)
+                    TemplCtrl1.SaveTemplate(templatename, lang, templatedata); // save in   
+                else
+                    TemplCtrl2.SaveTemplate(templatename, lang, templatedata); // save in custom theme (Module Level)
+            }
             else
-                TemplCtrl4.SaveTemplate(templatename, lang, templatedata); // save in default theme
+            {
+                if (portallevel)  // normally only save templates at portal level
+                    TemplCtrl3.SaveTemplate(templatename, lang, templatedata); // save in default theme
+                else
+                    TemplCtrl4.SaveTemplate(templatename, lang, templatedata); // save in default theme (Module Level)
+            }
         }
 
         public void SaveTemplate(string templatename, string templatedata)
