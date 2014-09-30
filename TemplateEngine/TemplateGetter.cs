@@ -40,8 +40,9 @@ namespace NBrightCore.TemplateEngine
         /// <param name="lang">langauge to get</param>
         /// <param name="replaceTemplateTokens">replace the [Template:*] tokens</param>
         /// <param name="replaceStringTokens">replace the [String:*] tokens</param>
+        /// <param name="portalLevel">if false the system level template will be returned, even if a portal level template exists</param>
         /// <returns></returns>
-        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true)
+        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true,bool portalLevel = true)
         {
             var templateData = "";
             var objT = new Template("");
@@ -50,7 +51,7 @@ namespace NBrightCore.TemplateEngine
                 // search custom themefolders
                 objT = TemplCtrl1.GetTemplate(templatename, lang);
                 templateData = objT.TemplateData;
-                if (!objT.IsTemplateFound)
+                if (!objT.IsTemplateFound || !portalLevel)
                 {
                     objT = TemplCtrl2.GetTemplate(templatename, lang);
                     templateData = objT.TemplateData;
@@ -61,7 +62,7 @@ namespace NBrightCore.TemplateEngine
                 // search default themefolders
                 objT = TemplCtrl3.GetTemplate(templatename, lang);
                 templateData = objT.TemplateData;
-                if (!objT.IsTemplateFound)
+                if (!objT.IsTemplateFound || !portalLevel)
                 {
                     objT = TemplCtrl4.GetTemplate(templatename, lang);
                     templateData = objT.TemplateData;
@@ -120,11 +121,16 @@ namespace NBrightCore.TemplateEngine
             }
         }
 
-        public void SaveTemplate(string templatename, string templatedata)
+        public void SaveTemplate(string templatename, string templatedata, Boolean portallevel = true)
         {
-            SaveTemplate(templatename, "Default", templatedata);
+            SaveTemplate(templatename, "Default", templatedata, portallevel);
         }
 
+        public void RemovePortalLevelTemplate(string templatename,String lang = "Default")
+        {
+            if (TemplCtrl1 != null) TemplCtrl1.DeleteTemplate(templatename, lang);
+            if (TemplCtrl3 != null) TemplCtrl3.DeleteTemplate(templatename, lang);
+        }
 
     }
 }
