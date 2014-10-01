@@ -2069,7 +2069,7 @@ namespace NBrightCore.render
                 else
                 {
                     var nod = GenXmlFunctions.GetGenXmLnode(ddl.ID, "dropdownlist", Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn)));
-                    if ((nod.Attributes != null) && (nod.Attributes["selectedtext"] != null))
+                    if (nod != null && (nod.Attributes != null) && (nod.Attributes["selectedtext"] != null))
                     {
                             strValue = XmlConvert.DecodeName(nod.Attributes["selectedtext"].Value);                            
                             if ((ddl.Items.FindByValue(strValue) != null))
