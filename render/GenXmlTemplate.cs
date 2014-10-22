@@ -49,6 +49,11 @@ namespace NBrightCore.render
             _ResourcePath.Add(resxFolder);
         }
 
+        public List<String> GetResxFolders()
+        {
+            return _ResourcePath;
+        }
+
         public GenXmlTemplate(string templateText, Dictionary<string, string> settings): this(templateText, "genxml", "XMLData", "", settings)
         {
         }
@@ -183,7 +188,7 @@ namespace NBrightCore.render
                         if (!string.IsNullOrEmpty(ctrltype))
                         {
 							// get any Langauge Resource Data from CMS
-							if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekey"] != null)))
+							if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekey"] != null  || xmlNod.Attributes["resourcekeysave"] != null)))
 							{
 								xmlNod = GetCMSResourceData(xmlDoc);
 							}
@@ -889,7 +894,14 @@ namespace NBrightCore.render
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
             txt.Enabled = GetRoleEnabled(xmlNod.OuterXml);
 
-            txt.DataBinding += TextDataBinding;
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekeysave"] != null))
+            {
+                if (xmlNod.Attributes != null && (xmlNod.Attributes["lang"] != null)) txt.Attributes.Add("lang", xmlNod.Attributes["lang"].InnerXml); ;
+                txt.Attributes.Add("resourcekeysave", xmlNod.Attributes["resourcekeysave"].InnerXml); 
+            }
+            else
+                txt.DataBinding += TextDataBinding;
+
             return txt;
         }
 
@@ -2224,8 +2236,8 @@ namespace NBrightCore.render
 
 		private XmlNode GetCMSResourceData(XmlDocument xmlDoc)
 		{
-			var xmlNod = xmlDoc.SelectSingleNode("root/tag");                        
-			if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekey"] != null)))
+			var xmlNod = xmlDoc.SelectSingleNode("root/tag");
+            if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["resourcekey"] != null || xmlNod.Attributes["resourcekeysave"] != null)))
 			{
                 if (_ResourcePath != null && _ResourcePath.Count > 0)
 				{
@@ -2234,7 +2246,13 @@ namespace NBrightCore.render
                         //add resource attribuutes to tag xml node.
                         try
                         {
-                            var rList = providers.CmsProviderManager.Default.GetResourceData(r, xmlNod.Attributes["resourcekey"].Value);
+                            var resourcekey = "";
+                            if (xmlNod.Attributes["resourcekey"] != null) resourcekey  = xmlNod.Attributes["resourcekey"].Value;
+                            if (resourcekey == "" && xmlNod.Attributes["resourcekeysave"] != null) resourcekey = xmlNod.Attributes["resourcekeysave"].Value; // save key is for updating resx file
+                            var lang = "";
+                            if (xmlNod.Attributes["lang"] != null) lang = xmlNod.Attributes["lang"].Value;
+                            var rList = providers.CmsProviderManager.Default.GetResourceData(r, resourcekey, lang);
+
                             foreach (var i in rList)
                             {
                                 var aNod = xmlDoc.CreateAttribute(i.Key);
@@ -2247,8 +2265,10 @@ namespace NBrightCore.render
                             //ignore the theme/folder may have been removed.
                         }
                     }
-					var rNod = xmlNod.Attributes["resourcekey"];
-					xmlNod.Attributes.Remove(rNod);
+
+                    var rNod = xmlNod.Attributes["resourcekey"];
+                    xmlNod.Attributes.Remove(rNod);
+
 				}
 			}
 			return xmlNod;

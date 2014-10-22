@@ -955,7 +955,9 @@ namespace NBrightCore.render
                 else if (ctrl is TextBox)
                 {
                     var ctl = (TextBox) ctrl;
-                    if (ctl.Enabled & ctl.Visible) txtCtrls.Add(ctrl);
+                    // if we have a resourcekeysave attr don't save it into the data xml, this needs to update the resx file, using the GetGenXmlResx
+                    bool isResourceKeySave = ctl.Attributes["resourcekeysave"] != null;
+                    if (ctl.Enabled & ctl.Visible & !isResourceKeySave) txtCtrls.Add(ctrl);
                 }
                 else if (ctrl is RadioButtonList)
                 {
@@ -1386,6 +1388,38 @@ namespace NBrightCore.render
             }
 
             return strXml;
+
+        }
+
+
+        public static Dictionary<String, String> GetGenXmlResx(Repeater rpGenXml, int rowIndex = 0)
+        {
+            //check row exists (0 based)
+            if (rpGenXml.Items.Count <= rowIndex | rpGenXml.Items.Count == 0) return new Dictionary<String, String>();
+
+            var rpItem = rpGenXml.Items[rowIndex];
+            return GetGenXmlResx(rpItem);
+        }
+
+        public static Dictionary<String, String> GetGenXmlResx(RepeaterItem rpItem)
+        {
+            var rtnDic = new Dictionary<String, String>();
+
+            var txtCtrls = new List<Control>();
+
+            //build list of controls
+            foreach (Control ctrl in rpItem.Controls)
+            {
+                if (ctrl is TextBox)
+                {
+                    var ctl = (TextBox)ctrl;
+                    // if we have a resourcekeysave attr return the contrbol data
+                    bool isResourceKeySave = ctl.Attributes["resourcekeysave"] != null;
+                    if (ctl.Enabled & ctl.Visible & isResourceKeySave) rtnDic.Add(ctl.Attributes["resourcekeysave"], ctl.Text);
+                }
+            }
+
+            return rtnDic;
 
         }
 

@@ -28,7 +28,7 @@ namespace NBrightCore.providers
         public abstract List<string> GetCultureCodeList();
 
 		// This method is designed to return a list of resource keys and values that can be used for localization.
-		public abstract Dictionary<String, String> GetResourceData(String resourcePath, String resourceKey);
+		public abstract Dictionary<String, String> GetResourceData(String resourcePath, String resourceKey, String lang = "");
 
     }
 }
