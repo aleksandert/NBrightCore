@@ -41,8 +41,9 @@ namespace NBrightCore.TemplateEngine
         /// <param name="replaceTemplateTokens">replace the [Template:*] tokens</param>
         /// <param name="replaceStringTokens">replace the [String:*] tokens</param>
         /// <param name="portalLevel">if false the system level template will be returned, even if a portal level template exists</param>
+        /// <param name="settings">If passed a replacement of settings tokens is done directly after the template is loaded</param>
         /// <returns></returns>
-        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true,bool portalLevel = true)
+        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true,bool portalLevel = true, Dictionary<String,String> settings = null)
         {
             var templateData = "";
             var objT = new Template("");
@@ -69,6 +70,7 @@ namespace NBrightCore.TemplateEngine
                 }                                
             }
 
+            if (settings != null) templateData = Utils.ReplaceSettingTokens(templateData, settings);
 
             if (replaceTemplateTokens) templateData = ReplaceTemplateTokens(templateData, lang);
 
