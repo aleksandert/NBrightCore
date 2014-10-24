@@ -33,6 +33,7 @@ namespace NBrightCore.TemplateEngine
             TemplCtrl4 = new TemplateController(secondaryMapPath, defaultThemeFolder);
         }
 
+
         /// <summary>
         /// Get template from the filesytem, search primary mappath (both themes), if not found search socendary mappath (both themes)
         /// </summary>
@@ -43,7 +44,7 @@ namespace NBrightCore.TemplateEngine
         /// <param name="portalLevel">if false the system level template will be returned, even if a portal level template exists</param>
         /// <param name="settings">If passed a replacement of settings tokens is done directly after the template is loaded</param>
         /// <returns></returns>
-        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true,bool portalLevel = true, Dictionary<String,String> settings = null)
+        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens, bool replaceStringTokens,bool portalLevel, Dictionary<String,String> settings)
         {
             var templateData = "";
             var objT = new Template("");
@@ -70,13 +71,21 @@ namespace NBrightCore.TemplateEngine
                 }                                
             }
 
+            // we need to replace settings tokens before the templates, so templates can load from a setting token folder.
             if (settings != null) templateData = Utils.ReplaceSettingTokens(templateData, settings);
 
             if (replaceTemplateTokens) templateData = ReplaceTemplateTokens(templateData, lang);
 
+            if (settings != null) templateData = Utils.ReplaceSettingTokens(templateData, settings); // replace all settings tokens in injected templates.
+
             if (replaceStringTokens) templateData = ReplaceResourceString(templateData);
 
             return templateData;
+        }
+
+        public string GetTemplateData(string templatename, string lang, bool replaceTemplateTokens = true, bool replaceStringTokens = true, bool portalLevel = true)
+        {
+            return GetTemplateData(templatename,lang, replaceTemplateTokens,replaceStringTokens,portalLevel,null);
         }
 
         public string ReplaceTemplateTokens(string templText, string lang, int recursiveCount = 0)
