@@ -473,6 +473,10 @@ namespace NBrightCore.TemplateEngine
                                     strOut = strOut.Replace("[" + aryT[lp] + "]", newTemplateText);
                                     blnTemplateFound = true;
                                 }
+                                else
+                                {
+                                    strOut = strOut.Replace("[" + aryT[lp] + "]", "");                                    
+                                }
                             }
                         }
                     }
