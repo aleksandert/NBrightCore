@@ -105,7 +105,7 @@ namespace NBrightCore.render
 
                                     if (xmlNod.Attributes["id"].Value.ToLower() == "resourcepath")
                                     {
-                                        _ResourcePath.Add(xmlNod.Attributes["value"].Value);
+                                        if (!_ResourcePath.Contains(xmlNod.Attributes["value"].Value)) _ResourcePath.Add(xmlNod.Attributes["value"].Value);
                                     }
                                 }
                             }
