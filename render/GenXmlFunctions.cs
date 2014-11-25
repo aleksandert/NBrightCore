@@ -2088,6 +2088,22 @@ namespace NBrightCore.render
             return xmlNod.InnerText;
         }
 
+        /// <summary>
+        /// get the data fromthe XML wothout reformatting for numbers or dates.
+        /// </summary>
+        /// <param name="dataXml"></param>
+        /// <param name="xPath"></param>
+        /// <returns></returns>
+        public static string GetGenXmlValueRawFormat(string dataXml, string xPath)
+        {
+            var xmlNod = GetGenXmLnode(dataXml, xPath);
+            if (xmlNod == null)
+            {
+                return "";
+            }
+            return xmlNod.InnerText;
+        }
+
         public static XmlNode GetGenXmLnode(string ctrlId, string ctrlType, string dataXml)
         {
             return GetGenXmLnode(ctrlId, ctrlType, dataXml, "genxml");
