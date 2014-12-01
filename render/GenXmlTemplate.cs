@@ -2249,7 +2249,7 @@ namespace NBrightCore.render
                             var resourcekey = "";
                             if (xmlNod.Attributes["resourcekey"] != null) resourcekey  = xmlNod.Attributes["resourcekey"].Value;
                             if (resourcekey == "" && xmlNod.Attributes["resourcekeysave"] != null) resourcekey = xmlNod.Attributes["resourcekeysave"].Value; // save key is for updating resx file
-                            var lang = "";
+                            var lang = EditCultureCode;
                             if (xmlNod.Attributes["lang"] != null) lang = xmlNod.Attributes["lang"].Value;
                             var rList = providers.CmsProviderManager.Default.GetResourceData(r, resourcekey, lang);
 
