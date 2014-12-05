@@ -1766,7 +1766,7 @@ namespace NBrightCore.render
                         {
                             var ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
 
-                            if (nod.InnerText == "checked")
+                            if (nod.InnerText == "True")
                             {
 
                                 var dataValue = "";
