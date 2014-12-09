@@ -2127,7 +2127,7 @@ namespace NBrightCore.render
 
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(dataXml);
-                var xmlNod = xmlDoc.SelectSingleNode(xPath.ToLower());
+                var xmlNod = xmlDoc.SelectSingleNode(xPath);
                 return xmlNod;
             }
             catch (Exception)
