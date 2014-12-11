@@ -216,6 +216,9 @@ namespace NBrightCore.render
                                 case "breakof":
                                     CreateBreakOf(container, xmlNod);
                                     break;
+                                case "listof":
+                                    CreateListOf(container, xmlNod);
+                                    break;
                                 case "checkboxlistof":
                                     CreateCheckBoxListOf(container, xmlNod);
                                     break;
@@ -451,6 +454,18 @@ namespace NBrightCore.render
             }
 
             lc.DataBinding += BreakOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
+        private void CreateListOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal();
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null))
+            {
+                lc.Text = xmlNod.Attributes["xpath"].InnerXml;
+            }
+            
+            lc.DataBinding += ListOfDataBinding;
             container.Controls.Add(lc);
         }
 
@@ -1646,6 +1661,32 @@ namespace NBrightCore.render
                 lc.Text = lc.Text.Replace(Environment.NewLine, "<br/>");
                 lc.Text = lc.Text.Replace("\t", "&nbsp;&nbsp;&nbsp;");
                 lc.Text = lc.Text.Replace("'", "&apos;");
+
+            }
+            catch (Exception)
+            {
+                lc.Text = "";
+            }
+        }
+
+        private void ListOfDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+
+            try
+            {
+                lc.Visible = NBrightGlobal.IsVisible;
+                var strXml = DataBinder.Eval(container.DataItem, DatabindColumn).ToString();
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(strXml);
+                var xpath = lc.Text;
+                lc.Text = "";
+                var nodList = xmlDoc.SelectNodes(xpath);
+                foreach (XmlNode nod in nodList)
+                {
+                    lc.Text += "<li>" + HttpUtility.HtmlEncode(nod.InnerText).Replace("'", "&apos;") + "</li>";                    
+                }
 
             }
             catch (Exception)
