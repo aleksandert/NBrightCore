@@ -553,9 +553,11 @@ namespace NBrightCore.render
             {
                 rbl.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
             }
-            if (xmlNod.Attributes != null && (xmlNod.Attributes["data"] != null))
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["data"] != null || xmlNod.Attributes["datavalue"] != null))
             {
-                var xmldata = HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml);
+                var xmldata = "";
+                if ((xmlNod.Attributes["data"] != null)) xmldata = HttpUtility.HtmlDecode(xmlNod.Attributes["data"].InnerXml);
+                if (xmldata == "" && (xmlNod.Attributes["datavalue"] != null)) xmldata = xmlNod.Attributes["datavalue"].InnerText;
 
                 string[] strListValue;
                 if ((xmlNod.Attributes["datavalue"] != null))
