@@ -1104,6 +1104,10 @@ namespace NBrightCore.render
                 {
                     hid.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
                 }
+                if ((xmlNod.Attributes["xpath"] != null))
+                {
+                    hid.Attributes.Add("xpath", xmlNod.Attributes["xpath"].InnerXml);
+                }
             }
 
             return hid;
@@ -1295,6 +1299,10 @@ namespace NBrightCore.render
                 {
                     // check for legacy databind method on value
                     hid.Attributes["value"] = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["value"].ToLower().Replace("databind:", "")));
+                }
+                else if (hid.Attributes["xpath"] != null)
+                {
+                    hid.Attributes["value"] = GenXmlFunctions.GetGenXmlValue(Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn)), hid.Attributes["xpath"]);
                 }
                 else
                 {
