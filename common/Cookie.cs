@@ -73,18 +73,25 @@ namespace NBrightCore.common
             var fullCookieName = string.Format("NBright_{0}_Portal{1}", cookieName, portalId.ToString(CultureInfo.InvariantCulture));
             var foundCookie = HttpContext.Current.Request.Cookies[fullCookieName] ?? new HttpCookie(fullCookieName);
 
-            // replace special chars, terminates the cookie string
-            value = value.Replace(";", "*SC*");
-            value = value.Replace("&", "*AMP*");
-
-            if (encryptkey != "")
+            if (value != null)
             {
-                valueId = Security.Encrypt(encryptkey, valueId);
-                //trim any "=" off so the key works
-                valueId = valueId.TrimEnd('=');
-                value = Security.Encrypt(encryptkey, value);
+                // replace special chars, terminates the cookie string
+                value = value.Replace(";", "*SC*");
+                value = value.Replace("&", "*AMP*");
+
+                if (encryptkey != "")
+                {
+                    valueId = Security.Encrypt(encryptkey, valueId);
+                    //trim any "=" off so the key works
+                    valueId = valueId.TrimEnd('=');
+                    value = Security.Encrypt(encryptkey, value);
+                }
+                foundCookie[valueId] = value;                
             }
-            foundCookie[valueId] = value;
+            else
+            {
+                foundCookie[valueId] = "";                   
+            }
 
             SetCookie(foundCookie, expireDays);
         }
