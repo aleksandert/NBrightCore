@@ -849,9 +849,21 @@ namespace NBrightCore.common
                     if (s.StartsWith(tokenTag))
                     {
                         var urlparam = s.Replace(tokenTag, "").Replace("]", "");
+                        strTemplate = strTemplate.Replace("{" + s + "}", RequestParam(HttpContext.Current, urlparam)); // deal with situation where a token is in the template as "[]" and a tag as "{}"
                         strTemplate = strTemplate.Replace(s, RequestParam(HttpContext.Current, urlparam));
                     }
                 }
+
+                aryTempl = ParseTemplateText(strTemplate, "{", "}");
+                foreach (var s in aryTempl)
+                {
+                    if (s.StartsWith(tokenTag))
+                    {
+                        var urlparam = s.Replace(tokenTag, "").Replace("}", "");
+                        strTemplate = strTemplate.Replace("{" + s + "}", RequestParam(HttpContext.Current, urlparam));
+                    }
+                }
+
             }
             return strTemplate;
         }
