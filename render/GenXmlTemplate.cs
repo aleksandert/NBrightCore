@@ -152,7 +152,7 @@ namespace NBrightCore.render
             {
                 container.Page = CurrentPage;                
             }
-
+            
             var xmlDoc = new XmlDocument();
             string ctrltype = "";
             string tokennamespace = "";

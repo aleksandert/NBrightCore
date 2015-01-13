@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -804,7 +805,8 @@ namespace NBrightCore
     /// <summary>
     /// Static Class to store Global NBright Settings data
     /// </summary>
-    public static class NBrightGlobal
+    [Obsolete("The global function is static and therefore causes issues for multiple users displaying data at the same time, move providers to use... ")]
+    public static class NBrightGlobal 
     {
         /// <summary>
         /// This global boolean is used to display controls during the data binding process.

@@ -12,6 +12,8 @@ namespace NBrightCore.TemplateEngine
 
         private TemplateController TemplCtrl1;
         private TemplateController TemplCtrl2;
+        private TemplateController TemplCtrl1b;
+        private TemplateController TemplCtrl2b;
         private TemplateController TemplCtrl3;
         private TemplateController TemplCtrl4;
 
@@ -21,13 +23,19 @@ namespace NBrightCore.TemplateEngine
         /// <param name="primaryMapPath">folder to look for a themes (On a multiple portal system this will usually be the portal root)</param>
         /// <param name="secondaryMapPath">fallback folder to look for a themes if not found in primary (Usually the module admin folder, where default installed templates are saved)</param>
         /// <param name="defaultThemeFolder">Default theme folder name to look for</param>
-        /// <param name="themeFolder">custom theme folder name to look for, if no template is found here the default theme will be searched.</param>
-        public TemplateGetter(string primaryMapPath, string secondaryMapPath, string defaultThemeFolder = "NBrightTemplates", string themeFolder = "")
+        /// <param name="themeFolder">custom theme folder name to look for, if no template is found here the system theme, then the default theme will be searched.</param>
+        /// <param name="systemThemeFolder">system theme folder, will search themefolder, systemThemefolder and then defaultThemeFolder</param>
+        public TemplateGetter(string primaryMapPath, string secondaryMapPath, string defaultThemeFolder = "NBrightTemplates", string themeFolder = "",string systemThemeFolder = "")
         {
             if (themeFolder != "")
             {
                 TemplCtrl1 = new TemplateController(primaryMapPath, themeFolder);
                 TemplCtrl2 = new TemplateController(secondaryMapPath, themeFolder);                
+            }
+            if (systemThemeFolder != "" && systemThemeFolder != themeFolder)
+            {
+                TemplCtrl1b = new TemplateController(primaryMapPath, systemThemeFolder);
+                TemplCtrl2b = new TemplateController(secondaryMapPath, systemThemeFolder);                
             }
             TemplCtrl3 = new TemplateController(primaryMapPath, defaultThemeFolder);
             TemplCtrl4 = new TemplateController(secondaryMapPath, defaultThemeFolder);
@@ -58,6 +66,17 @@ namespace NBrightCore.TemplateEngine
                     objT = TemplCtrl2.GetTemplate(templatename, lang);
                     templateData = objT.TemplateData;
                 }                
+            }
+            if (!objT.IsTemplateFound && TemplCtrl1b != null)
+            {
+                // search custom systemThemefolders
+                objT = TemplCtrl1b.GetTemplate(templatename, lang);
+                templateData = objT.TemplateData;
+                if (!objT.IsTemplateFound || !portalLevel)
+                {
+                    objT = TemplCtrl2b.GetTemplate(templatename, lang);
+                    templateData = objT.TemplateData;
+                }
             }
             if (!objT.IsTemplateFound)
             {
@@ -96,6 +115,11 @@ namespace NBrightCore.TemplateEngine
                 strOut = TemplCtrl1.ReplaceTemplateTokens(strOut, lang, recursiveCount);
                 strOut = TemplCtrl2.ReplaceTemplateTokens(strOut, lang, recursiveCount);
             }
+            if (TemplCtrl1b != null)
+            {
+                strOut = TemplCtrl1b.ReplaceTemplateTokens(strOut, lang, recursiveCount);
+                strOut = TemplCtrl2b.ReplaceTemplateTokens(strOut, lang, recursiveCount);
+            }
             strOut = TemplCtrl3.ReplaceTemplateTokens(strOut, lang, recursiveCount);
             strOut = TemplCtrl4.ReplaceTemplateTokens(strOut, lang, recursiveCount);
             return strOut;
@@ -108,6 +132,10 @@ namespace NBrightCore.TemplateEngine
             {
                 strOut = TemplCtrl1.ReplaceResourceString(strOut);
             }
+            if (TemplCtrl1b != null)
+            {
+                strOut = TemplCtrl1b.ReplaceResourceString(strOut);
+            }
             strOut = TemplCtrl3.ReplaceResourceString(strOut);
             return strOut;
 
@@ -115,7 +143,8 @@ namespace NBrightCore.TemplateEngine
 
         public void SaveTemplate(string templatename, string lang, string templatedata, Boolean portallevel = true)
         {
-            // save the template on secondary folder (usually portal in multiportal system)
+            // save the template on secondary folder (usually portal in multiportal system) 
+            // NOTE: Can't save back to the systemthemefolder.
             if (TemplCtrl1 != null)
             {
                 if (portallevel)  // normally only save templates at portal level (So they override default template at module level, but don't overwrite them)
@@ -139,6 +168,7 @@ namespace NBrightCore.TemplateEngine
 
         public void RemovePortalLevelTemplate(string templatename,String lang = "Default")
         {
+            // NOTE: Can;t alter systemThemefolder
             if (TemplCtrl1 != null) TemplCtrl1.DeleteTemplate(templatename, lang);
             if (TemplCtrl3 != null) TemplCtrl3.DeleteTemplate(templatename, lang);
         }

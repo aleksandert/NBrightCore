@@ -362,7 +362,7 @@ namespace NBrightCore.render
             }
 
             var newImageFileName = folderMapPath.TrimEnd(Convert.ToChar("\\")) + "\\" + strGUIDJPG;
-            var imgSize = Utils.IsNumeric(GetHiddenField(rpItem, "ImageResize")) ? Convert.ToInt32(GetHiddenField(rpItem, "ImageResize")) : 450;
+            var imgSize = Utils.IsNumeric(GetHiddenField(rpItem, "ImageResize")) ? Convert.ToInt32(GetHiddenField(rpItem, "ImageResize")) : 640;
             var extension = Path.GetExtension(strGUIDJPG);
             if (extension != null && extension.ToLower() == ".png")
             {
