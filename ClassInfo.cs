@@ -805,17 +805,18 @@ namespace NBrightCore
     /// <summary>
     /// Static Class to store Global NBright Settings data
     /// </summary>
-    [Obsolete("The global function is static and therefore causes issues for multiple users displaying data at the same time, move providers to use... ")]
     public static class NBrightGlobal 
     {
         /// <summary>
         /// This global boolean is used to display controls during the data binding process.
         /// </summary>
+        /// The global function is static and therefore causes issues for multiple users displaying data at the same time when providers are used.
+        [Obsolete("Use Utils.GetVisibleState ")]
         public static bool IsVisible
         {
             get
             {
-                if (NBrightGlobal.IsVisibleList.Count > 0) return IsVisibleList[IsVisibleList.Count - 1];
+                if (IsVisibleList.Count > 0) return IsVisibleList[IsVisibleList.Count - 1];
                 return true;
             }
         }
@@ -824,6 +825,7 @@ namespace NBrightCore
         /// It need to be gloabl so providers can use it.
         /// It is set in the "GenXmlTemplate" by the "testof" and "endtestof" tag tokens
         /// </summary>
+        [Obsolete("Use Utils.GetVisibleState ")]
         public static List<bool> IsVisibleList;
 
     }

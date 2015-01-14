@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
 using System.Xml;
 using NBrightCore.providers;
-
+using Image = System.Drawing.Image;
 
 
 namespace NBrightCore.common
@@ -72,7 +74,7 @@ namespace NBrightCore.common
         {
             if (Directory.Exists(folderMapPath))
             {
-                Directory.Delete(folderMapPath,recursive);
+                Directory.Delete(folderMapPath, recursive);
             }
         }
 
@@ -104,7 +106,7 @@ namespace NBrightCore.common
                 if (context.Request.QueryString.Count != 0)
                 {
                     result = Convert.ToString(context.Request.QueryString[paramName]);
-                }                
+                }
             }
 
             return (result == null) ? String.Empty : result.Trim();
@@ -168,7 +170,7 @@ namespace NBrightCore.common
             {
                 case TypeCode.Double:
                     //always save CultureInfo.InvariantCulture format to the XML
-                    if (IsNumeric(inpData,GetCurrentCulture()))
+                    if (IsNumeric(inpData, GetCurrentCulture()))
                     {
                         var cultureInfo = new CultureInfo(GetCurrentCulture(), true);
                         var num = Convert.ToDouble(inpData, cultureInfo);
@@ -176,7 +178,7 @@ namespace NBrightCore.common
                     }
                     if (IsNumeric(inpData)) // just check if we have a Invariant double
                     {
-                        var num = Convert.ToDouble(inpData,CultureInfo.InvariantCulture);
+                        var num = Convert.ToDouble(inpData, CultureInfo.InvariantCulture);
                         return num.ToString(CultureInfo.InvariantCulture);
                     }
                     return "0";
@@ -197,7 +199,8 @@ namespace NBrightCore.common
             return FormatToDisplay(inpData, GetCurrentCulture(), dataTyp, formatCode);
         }
 
-        public static string FormatToDisplay(string inpData, string cultureCode, TypeCode dataTyp, string formatCode = "")
+        public static string FormatToDisplay(string inpData, string cultureCode, TypeCode dataTyp,
+            string formatCode = "")
         {
             if (String.IsNullOrEmpty(inpData))
             {
@@ -213,7 +216,7 @@ namespace NBrightCore.common
                 case TypeCode.Double:
                     if (IsNumeric(inpData))
                     {
-                        return Double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode, outCulture);                            
+                        return Double.Parse(inpData, CultureInfo.InvariantCulture).ToString(formatCode, outCulture);
                     }
                     return "0";
                 case TypeCode.DateTime:
@@ -250,11 +253,13 @@ namespace NBrightCore.common
             if (cultureCode != "")
             {
                 var cultureInfo = new CultureInfo(cultureCode, true);
-                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, cultureInfo.NumberFormat, out retNum);                
+                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, cultureInfo.NumberFormat,
+                    out retNum);
             }
             else
             {
-                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, CultureInfo.InvariantCulture, out retNum);                
+                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, CultureInfo.InvariantCulture,
+                    out retNum);
             }
 
             return isNum;
@@ -264,7 +269,8 @@ namespace NBrightCore.common
         public static bool IsDate(object expression, string cultureCode)
         {
             DateTime rtnD;
-            return DateTime.TryParse(Convert.ToString(expression), CultureInfo.CreateSpecificCulture(cultureCode), DateTimeStyles.None, out rtnD);
+            return DateTime.TryParse(Convert.ToString(expression), CultureInfo.CreateSpecificCulture(cultureCode),
+                DateTimeStyles.None, out rtnD);
         }
 
         public static bool IsDate(object expression)
@@ -275,7 +281,7 @@ namespace NBrightCore.common
         public static void SaveFile(string fullFileName, string data)
         {
             var buffer = StrToByteArray(data);
-            SaveFile(fullFileName,buffer);
+            SaveFile(fullFileName, buffer);
         }
 
         public static void SaveFile(string fullFileName, byte[] buffer)
@@ -524,11 +530,12 @@ namespace NBrightCore.common
         /// <returns></returns>
         public static string[] ParseTemplateText(string templText, String openchar = "[", String closechar = "]")
         {
-            char[] paramAry = { Convert.ToChar(openchar), Convert.ToChar(closechar) };
+            char[] paramAry = {Convert.ToChar(openchar), Convert.ToChar(closechar)};
 
             //use double sqr brqckets as escape char.
             var foundEscapeChar = false;
-            if (templText.IndexOf(openchar + openchar, StringComparison.Ordinal) > 0 | templText.IndexOf(closechar + closechar, StringComparison.Ordinal) > 0)
+            if (templText.IndexOf(openchar + openchar, StringComparison.Ordinal) > 0 |
+                templText.IndexOf(closechar + closechar, StringComparison.Ordinal) > 0)
             {
                 templText = templText.Replace(openchar + openchar, "**SQROPEN**");
                 templText = templText.Replace(closechar + closechar, "**SQRCLOSE**");
@@ -563,7 +570,7 @@ namespace NBrightCore.common
         public static string CleanInput(string strIn)
         {
             // Replace invalid characters with empty strings. 
-            return Regex.Replace(strIn, @"[^\w\.@-]", "",RegexOptions.None);
+            return Regex.Replace(strIn, @"[^\w\.@-]", "", RegexOptions.None);
         }
 
         /// <summary>
@@ -602,15 +609,16 @@ namespace NBrightCore.common
             return token;
         }
 
-    	/// <summary>
-    	/// Create dictionary of config setting from files
-    	/// </summary>
-    	/// <param name="DefaultConfigMapPath"></param>
-    	/// <param name="SecondaryConfigMapPath"></param>
-    	/// <param name="configNameCSV">CSV list of sectiuonnames to be returned, "" for all</param>
-    	/// <param name="AdvancedFlag">Flag to select advanced settings "1"=Advanved Only, "0"=Simple Only,""=All </param>
-    	/// <returns>Dictionary of all config settings</returns>
-    	public static Dictionary<string, NBrightSetting> ConfigBuildDictionary(String DefaultConfigMapPath, String SecondaryConfigMapPath,String configNameCSV = "", String AdvancedFlag = "")
+        /// <summary>
+        /// Create dictionary of config setting from files
+        /// </summary>
+        /// <param name="DefaultConfigMapPath"></param>
+        /// <param name="SecondaryConfigMapPath"></param>
+        /// <param name="configNameCSV">CSV list of sectiuonnames to be returned, "" for all</param>
+        /// <param name="AdvancedFlag">Flag to select advanced settings "1"=Advanved Only, "0"=Simple Only,""=All </param>
+        /// <returns>Dictionary of all config settings</returns>
+        public static Dictionary<string, NBrightSetting> ConfigBuildDictionary(String DefaultConfigMapPath,
+            String SecondaryConfigMapPath, String configNameCSV = "", String AdvancedFlag = "")
         {
             var outDict = new Dictionary<string, NBrightSetting>();
 
@@ -643,25 +651,29 @@ namespace NBrightCore.common
                         {
                             if (xNod.Attributes != null && xNod.Attributes["value"] != null)
                             {
-								if ((AdvancedFlag == "") || (AdvancedFlag == "0" && (xNod.Attributes["advanced"] == null || xNod.Attributes["advanced"].Value == "0")) || (AdvancedFlag == "1" && xNod.Attributes["advanced"] != null && xNod.Attributes["advanced"].Value == "1"))
-								{
-									var obj = new NBrightSetting();
-									obj.Key = configName + "." + xNod.Name;
-									obj.Name = xNod.Name;
-									obj.Type = "";
-									if (xNod.Attributes["type"] != null) obj.Type = xNod.Attributes["type"].Value;
-									obj.Value = "";
-									if (xNod.Attributes["value"] != null) obj.Value = xNod.Attributes["value"].Value;
+                                if ((AdvancedFlag == "") ||
+                                    (AdvancedFlag == "0" &&
+                                     (xNod.Attributes["advanced"] == null || xNod.Attributes["advanced"].Value == "0")) ||
+                                    (AdvancedFlag == "1" && xNod.Attributes["advanced"] != null &&
+                                     xNod.Attributes["advanced"].Value == "1"))
+                                {
+                                    var obj = new NBrightSetting();
+                                    obj.Key = configName + "." + xNod.Name;
+                                    obj.Name = xNod.Name;
+                                    obj.Type = "";
+                                    if (xNod.Attributes["type"] != null) obj.Type = xNod.Attributes["type"].Value;
+                                    obj.Value = "";
+                                    if (xNod.Attributes["value"] != null) obj.Value = xNod.Attributes["value"].Value;
 
-									if (outDict.ContainsKey(configName + "." + xNod.Name))
-									{
-										outDict[configName + "." + xNod.Name] = obj;
-									}
-									else
-									{
-										outDict.Add(configName + "." + xNod.Name, obj);
-									}
-								}
+                                    if (outDict.ContainsKey(configName + "." + xNod.Name))
+                                    {
+                                        outDict[configName + "." + xNod.Name] = obj;
+                                    }
+                                    else
+                                    {
+                                        outDict.Add(configName + "." + xNod.Name, obj);
+                                    }
+                                }
                             }
                         }
                     }
@@ -682,25 +694,31 @@ namespace NBrightCore.common
                             {
                                 if (xNod.Attributes != null && xNod.Attributes["value"] != null)
                                 {
-									if ((AdvancedFlag == "") || (AdvancedFlag == "0" && (xNod.Attributes["advanced"] == null || xNod.Attributes["advanced"].Value == "0")) || (AdvancedFlag == "1" && xNod.Attributes["advanced"] != null && xNod.Attributes["advanced"].Value == "1"))
-									{
-										var obj = new NBrightSetting();
-										obj.Key = configName + "." + xNod.Name;
-										obj.Name = xNod.Name;
-										obj.Type = "";
-										if (xNod.Attributes["type"] != null) obj.Type = xNod.Attributes["type"].Value;
-										obj.Value = "";
-										if (xNod.Attributes["value"] != null) obj.Value = xNod.Attributes["value"].Value;
+                                    if ((AdvancedFlag == "") ||
+                                        (AdvancedFlag == "0" &&
+                                         (xNod.Attributes["advanced"] == null ||
+                                          xNod.Attributes["advanced"].Value == "0")) ||
+                                        (AdvancedFlag == "1" && xNod.Attributes["advanced"] != null &&
+                                         xNod.Attributes["advanced"].Value == "1"))
+                                    {
+                                        var obj = new NBrightSetting();
+                                        obj.Key = configName + "." + xNod.Name;
+                                        obj.Name = xNod.Name;
+                                        obj.Type = "";
+                                        if (xNod.Attributes["type"] != null) obj.Type = xNod.Attributes["type"].Value;
+                                        obj.Value = "";
+                                        if (xNod.Attributes["value"] != null)
+                                            obj.Value = xNod.Attributes["value"].Value;
 
-										if (outDict.ContainsKey(configName + "." + xNod.Name))
-										{
-											outDict[configName + "." + xNod.Name] = obj;
-										}
-										else
-										{
-											outDict.Add(configName + "." + xNod.Name, obj);
-										}
-									}
+                                        if (outDict.ContainsKey(configName + "." + xNod.Name))
+                                        {
+                                            outDict[configName + "." + xNod.Name] = obj;
+                                        }
+                                        else
+                                        {
+                                            outDict.Add(configName + "." + xNod.Name, obj);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -715,83 +733,87 @@ namespace NBrightCore.common
 
         }
 
-		/// <summary>
-		/// Create Dictionary of config sections  i.e. all "root/*" nodes
-		/// </summary>
-		/// <param name="DefaultConfigDictionary">Dictionary of all Config settings. (Created by ConfigBuildDictionary function)</param>
-		/// <returns></returns>
-		public static  List<string> ConfigBuildSectionList(Dictionary<string, NBrightSetting> DefaultConfigDictionary)
-		{
-			var outL = new List<string>();
+        /// <summary>
+        /// Create Dictionary of config sections  i.e. all "root/*" nodes
+        /// </summary>
+        /// <param name="DefaultConfigDictionary">Dictionary of all Config settings. (Created by ConfigBuildDictionary function)</param>
+        /// <returns></returns>
+        public static List<string> ConfigBuildSectionList(Dictionary<string, NBrightSetting> DefaultConfigDictionary)
+        {
+            var outL = new List<string>();
 
-			foreach (var i in DefaultConfigDictionary)
-			{
-				var secName = i.Key.Split('.')[0];
-				if (secName != null)
-				{
-					if (!outL.Contains(secName)) outL.Add(secName);					
-				}
-			}
+            foreach (var i in DefaultConfigDictionary)
+            {
+                var secName = i.Key.Split('.')[0];
+                if (secName != null)
+                {
+                    if (!outL.Contains(secName)) outL.Add(secName);
+                }
+            }
 
-			return outL;
-		}
+            return outL;
+        }
 
 
-		/// <summary>
-		/// Take the xml config file and convert it to a Template.
-		/// </summary>
+        /// <summary>
+        /// Take the xml config file and convert it to a Template.
+        /// </summary>
         /// <param name="settingDict">Dictionary of Settings</param>
-		/// <param name="sectionName">Name of the config section to edit (e.g. "products")</param>
-		/// <returns>String html nbright template for displaying settings options</returns>
-        public static String ConfigConvertToTemplate(Dictionary<string, NBrightSetting> settingDict,String sectionName)
-		{
-			var strTempl = "";
+        /// <param name="sectionName">Name of the config section to edit (e.g. "products")</param>
+        /// <returns>String html nbright template for displaying settings options</returns>
+        public static String ConfigConvertToTemplate(Dictionary<string, NBrightSetting> settingDict, String sectionName)
+        {
+            var strTempl = "";
 
-            if (settingDict != null) 
-			{
-				strTempl += "<table><th></th><th></th>";
-				foreach (var i in settingDict)
+            if (settingDict != null)
+            {
+                strTempl += "<table><th></th><th></th>";
+                foreach (var i in settingDict)
+                {
+                    if (i.Key.ToLower().StartsWith(sectionName.ToLower()) | sectionName == "")
                     {
-						if (i.Key.ToLower().StartsWith(sectionName.ToLower()) | sectionName == "")
-						{
-							strTempl += "<tr><td>";
-							strTempl += i.Key + " : ";
-							strTempl += "</td><td>";
-							var obj = i.Value;
-							switch (obj.Type)
-							{
-								case "decimal":
-									strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value + "' width='100px' maxlength='50'  />]";
-									break;
-								case "int":
-									strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value + "' width='100px' maxlength='50'  />]";
-									break;
-								case "bool":
-									strTempl += "[<tag id='config" + i.Key + "' type='checkbox' checked='" + obj.Value + "' />]";
-									break;
-								default:
-									strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value + "' width='600px' maxlength='250'  />]";
-									break;
-							}
-							strTempl += "</td>";
-						}
+                        strTempl += "<tr><td>";
+                        strTempl += i.Key + " : ";
+                        strTempl += "</td><td>";
+                        var obj = i.Value;
+                        switch (obj.Type)
+                        {
+                            case "decimal":
+                                strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value +
+                                            "' width='100px' maxlength='50'  />]";
+                                break;
+                            case "int":
+                                strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value +
+                                            "' width='100px' maxlength='50'  />]";
+                                break;
+                            case "bool":
+                                strTempl += "[<tag id='config" + i.Key + "' type='checkbox' checked='" + obj.Value +
+                                            "' />]";
+                                break;
+                            default:
+                                strTempl += "[<tag id='config" + i.Key + "' type='textbox' text='" + obj.Value +
+                                            "' width='600px' maxlength='250'  />]";
+                                break;
+                        }
+                        strTempl += "</td>";
                     }
-				strTempl += "</table>";
-			}
-			return strTempl;
-		}
+                }
+                strTempl += "</table>";
+            }
+            return strTempl;
+        }
 
-		/// <summary>
-		/// Take a Repeater and convert it to XML config data.
-		/// </summary>
-		/// <param name="xmlConfig"></param>
-		/// <returns></returns>
-		public static XmlDataDocument ConfigConvertToXml()
-		{
-			var xmlDoc = new XmlDataDocument();
+        /// <summary>
+        /// Take a Repeater and convert it to XML config data.
+        /// </summary>
+        /// <param name="xmlConfig"></param>
+        /// <returns></returns>
+        public static XmlDataDocument ConfigConvertToXml()
+        {
+            var xmlDoc = new XmlDataDocument();
 
-			return xmlDoc;
-		}
+            return xmlDoc;
+        }
 
         /// <summary>
         /// Replace settings tokens in a template. {Setting:*} and [Setting:*]
@@ -812,7 +834,8 @@ namespace NBrightCore.common
                         var xpath = s.Replace(tokenTag, "").Replace("]", "");
                         var xValue = "";
                         if (settingsDic.ContainsKey(xpath)) xValue = settingsDic[xpath];
-                        strTemplate = strTemplate.Replace("{" + s + "}", xValue); // deal with situation where a token is in the template as "[]" and a tag as "{}"
+                        strTemplate = strTemplate.Replace("{" + s + "}", xValue);
+                            // deal with situation where a token is in the template as "[]" and a tag as "{}"
                         strTemplate = strTemplate.Replace(s, xValue);
                     }
                 }
@@ -824,7 +847,8 @@ namespace NBrightCore.common
                     if (s.StartsWith(tokenTag))
                     {
                         var xpath = s.Replace(tokenTag, "").Replace("}", "");
-                        if (settingsDic.ContainsKey(xpath)) strTemplate = strTemplate.Replace("{" + s + "}", settingsDic[xpath]);
+                        if (settingsDic.ContainsKey(xpath))
+                            strTemplate = strTemplate.Replace("{" + s + "}", settingsDic[xpath]);
                     }
                 }
 
@@ -849,7 +873,8 @@ namespace NBrightCore.common
                     if (s.StartsWith(tokenTag))
                     {
                         var urlparam = s.Replace(tokenTag, "").Replace("]", "");
-                        strTemplate = strTemplate.Replace("{" + s + "}", RequestParam(HttpContext.Current, urlparam)); // deal with situation where a token is in the template as "[]" and a tag as "{}"
+                        strTemplate = strTemplate.Replace("{" + s + "}", RequestParam(HttpContext.Current, urlparam));
+                            // deal with situation where a token is in the template as "[]" and a tag as "{}"
                         strTemplate = strTemplate.Replace(s, RequestParam(HttpContext.Current, urlparam));
                     }
                 }
@@ -880,9 +905,58 @@ namespace NBrightCore.common
             var result = new StringBuilder(maxSize);
             foreach (byte b in data)
             {
-                result.Append(chars[b % (chars.Length - 1)]);
+                result.Append(chars[b%(chars.Length - 1)]);
             }
             return result.ToString();
         }
+
+        #region "visible state tracking"
+
+        /// <summary>
+        /// Use to keep track of template visible state. 
+        /// </summary>
+        /// <param name="container">Container to track</param>
+        /// <returns></returns>
+        public static bool GetVisibleState(Control container)
+        {
+            var h = (HiddenField) container.FindControl("nbrightvisiblity");
+            if (h == null) return true; // no control to store visible state, always display
+            var l = h.Value.Split(';');
+            if (l.Length == 0) return true;
+            return Convert.ToBoolean(l.Last());
+        }
+
+        public static void SetVisibleState(Control container, Boolean visiblestate)
+        {
+            var h = (HiddenField) container.FindControl("nbrightvisiblity");
+            if (h == null)
+            {
+                h = new HiddenField();
+                h.ID = "nbrightvisiblity";
+                container.Controls.Add(h);
+                h.Value += visiblestate;
+            }
+            else
+            {
+                h.Value = ";" + h.Value;                
+            }
+        }
+
+        public static void RemoveVisibleState(Control container)
+        {
+            var h = (HiddenField) container.FindControl("nbrightvisiblity");
+            if (h != null)
+            {
+                var l = h.Value.Split(';');
+                for (int i = 0; i < (l.Length - 1); i++)
+                {
+                    h.Value += l[i] + ';';
+                }
+                h.Value = h.Value.TrimEnd(';');
+            }
+        }
+
+        #endregion
+
     }
 }

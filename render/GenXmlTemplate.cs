@@ -22,7 +22,8 @@ namespace NBrightCore.render
         protected Dictionary<string, string> Settings;
         private Dictionary<string, string> hiddenFields;
         private List<string> _ResourcePath;
-        
+        private Control _container;
+
         public String GetHiddenFieldValue(string Key)
         {
             if (hiddenFields.ContainsKey(Key.ToLower()))
@@ -146,7 +147,9 @@ namespace NBrightCore.render
         /// </summary>
         public void InstantiateIn(Control container)
         {
-            NBrightGlobal.IsVisibleList = new List<bool>();
+            _container = container;
+            //create hidden control to keep track of visiblity across providers
+            Utils.SetVisibleState(container,true);
 
             if (CurrentPage != null)
             {
@@ -1011,7 +1014,7 @@ namespace NBrightCore.render
             var fu = (FileUpload)sender;
             try
             {
-                fu.Visible = NBrightGlobal.IsVisible;
+                fu.Visible = Utils.GetVisibleState(_container);
             }
             catch (Exception)
             {
@@ -1290,7 +1293,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = NBrightGlobal.IsVisible;
+                hid.Visible = Utils.GetVisibleState(_container);
                 if (hid.Attributes["databind"] != null)
                 {
                     hid.Attributes["value"] = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["databind"]));                    
@@ -1360,7 +1363,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = NBrightGlobal.IsVisible;
+                hid.Visible = Utils.GetVisibleState(_container);
                 hid.Value = GenXmlFunctions.GetGenXmLnode(hid.ID, "hidden", Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn))).InnerText;
             }
             catch (Exception)
@@ -1386,7 +1389,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = NBrightGlobal.IsVisible;
+                hid.Visible = Utils.GetVisibleState(_container);
                 if (container.DataItem != null && DataBinder.Eval(container.DataItem, DatabindColumn) != null)
                 {
                     if ((hid.Attributes["databind"] != null))
@@ -1457,10 +1460,10 @@ namespace NBrightCore.render
             // NOTE: Do not set Text = "", If we've assign a Text value in the template (or resourcekey) then use it as default. (unless Error)
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            lc.Visible = NBrightGlobal.IsVisible;
+            lc.Visible = Utils.GetVisibleState(_container);
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 // check if we have any formatting to do
                 var strFormat = "";
                 var strFormatType = "";
@@ -1547,10 +1550,10 @@ namespace NBrightCore.render
             // Output data, but eacape "'" to "&apos;", this is so string values can be assign in javascript.
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            lc.Visible = NBrightGlobal.IsVisible;
+            lc.Visible = Utils.GetVisibleState(_container);
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 // check if we have any formatting to do
                 var xPath = lc.Text;
                 //Get Data or set to empty is no data exits
@@ -1592,7 +1595,7 @@ namespace NBrightCore.render
                 var xpath = s[0];
                 var displaytype = "";
                 if (s.Length > 1) displaytype = s[1]; 
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 var xmlNod = GenXmlFunctions.GetGenXmLnode((string)DataBinder.Eval(container.DataItem, DatabindColumn), s[0]);
                 lc.Text = "";
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
@@ -1650,7 +1653,7 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text =Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
@@ -1686,7 +1689,7 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 var strXml = DataBinder.Eval(container.DataItem, DatabindColumn).ToString();
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(strXml);
@@ -1711,7 +1714,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 var xmlDoc = new XmlDataDocument();
                 string testValue = "";
                 string display = "";
@@ -1824,17 +1827,17 @@ namespace NBrightCore.render
 
                 // If the Visible flag is OFF then keep it off, even if the child test is true
                 // This allows nested tests to function correctly, by using the parent result.
-                if (!NBrightGlobal.IsVisible) 
+                if (!Utils.GetVisibleState(_container)) 
                 {
-                    if (output == "{ON}" | output == "{OFF}") NBrightGlobal.IsVisibleList.Add(false); // only add level on {} testof
+                    if (output == "{ON}" | output == "{OFF}") Utils.SetVisibleState(_container,false); // only add level on {} testof
                 }
                 else
                 {
-                    if (output == "{ON}") NBrightGlobal.IsVisibleList.Add(true);
-                    if (output == "{OFF}") NBrightGlobal.IsVisibleList.Add(false);
+                    if (output == "{ON}") Utils.SetVisibleState(_container,true);
+                    if (output == "{OFF}") Utils.SetVisibleState(_container,false);
                 }
 
-                if (NBrightGlobal.IsVisible && output != "{ON}") lc.Text = output;
+                if (Utils.GetVisibleState(_container) && output != "{ON}") lc.Text = output;
                 if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
             }
             catch (Exception)
@@ -1847,7 +1850,7 @@ namespace NBrightCore.render
         {
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            if (NBrightGlobal.IsVisibleList.Count > 0) NBrightGlobal.IsVisibleList.RemoveAt(NBrightGlobal.IsVisibleList.Count - 1);
+            Utils.RemoveVisibleState(_container);
             lc.Text = "";  //always display nothign for this, it just to stop testof state.
         }
 
@@ -1858,7 +1861,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 if (lc.Text.ToLower().StartsWith("resxdata:"))
                 {
                     //Text data passed as resx, so display it.
@@ -1897,7 +1900,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
@@ -1928,7 +1931,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)cmd.NamingContainer;
             try
             {
-                cmd.Visible = NBrightGlobal.IsVisible;
+                cmd.Visible = Utils.GetVisibleState(_container);
 
                 if (cmd.Text.ToLower().StartsWith("databind:"))
                 {
@@ -1974,20 +1977,20 @@ namespace NBrightCore.render
         }
 
 
-        private static void LiteralDataBinding(object sender, EventArgs e)
+        private void LiteralDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
-            lc.Visible = NBrightGlobal.IsVisible;
+            lc.Visible = Utils.GetVisibleState(_container);
         }
 
-        private static void GeneralDataBinding(object sender, EventArgs e)
+        private void GeneralDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
 
             try
             {
-                lc.Visible = NBrightGlobal.IsVisible;
+                lc.Visible = Utils.GetVisibleState(_container);
                 lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text));
             }
             catch (Exception)
@@ -2004,7 +2007,7 @@ namespace NBrightCore.render
 
             try
             {
-                rbl.Visible = NBrightGlobal.IsVisible;
+                rbl.Visible = Utils.GetVisibleState(_container);
                 string strValue;
                 if ((rbl.Attributes["databind"] != null))
                 {
@@ -2032,7 +2035,7 @@ namespace NBrightCore.render
 
             try
             {
-                chk.Visible = NBrightGlobal.IsVisible;
+                chk.Visible = Utils.GetVisibleState(_container);
                 var xmlNod = GenXmlFunctions.GetGenXmLnode(chk.ID, "checkboxlist", (string)DataBinder.Eval(container.DataItem, DatabindColumn));
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
                 if (xmlNodeList != null)
@@ -2090,7 +2093,7 @@ namespace NBrightCore.render
 
             try
             {
-                chk.Visible = NBrightGlobal.IsVisible;
+                chk.Visible = Utils.GetVisibleState(_container);
                 if ((chk.Attributes["databind"] != null))
                 {
                     chk.Checked = Convert.ToBoolean(Convert.ToString(DataBinder.Eval(container.DataItem, chk.Attributes["databind"])));
@@ -2114,7 +2117,7 @@ namespace NBrightCore.render
 
             try
             {
-                ddl.Visible = NBrightGlobal.IsVisible;
+                ddl.Visible = Utils.GetVisibleState(_container);
                 string strValue;
                 if ((ddl.Attributes["databind"] != null))
                 {
@@ -2155,7 +2158,7 @@ namespace NBrightCore.render
 
             try
             {
-                txt.Visible = NBrightGlobal.IsVisible;
+                txt.Visible = Utils.GetVisibleState(_container);
                 if (txt.Width == 0) txt.Visible = false; // always hide if we have a width of zero.
                 if ((txt.Attributes["databind"] != null))
                 {
@@ -2208,7 +2211,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)cmd.NamingContainer;
             try
             {
-                cmd.Visible = NBrightGlobal.IsVisible;
+                cmd.Visible = Utils.GetVisibleState(_container);
 
                 if (cmd.Text.ToLower().StartsWith("databind:"))
                 {
