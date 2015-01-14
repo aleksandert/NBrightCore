@@ -2465,9 +2465,9 @@ namespace NBrightCore.render
         }
 
 
-        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "",Dictionary<string, string> settings = null)
+        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null)
         {
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings) };
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings, visibleStatus) };
 
             dlGen.DataSource = objList;
             dlGen.DataBind();
@@ -2481,10 +2481,10 @@ namespace NBrightCore.render
             return sb.ToString();
         }
 
-        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null)
+        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null)
         {
             var arylist = new ArrayList();
-            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings) };
+            var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings, visibleStatus) };
 
             arylist.Add(objInfo);
 

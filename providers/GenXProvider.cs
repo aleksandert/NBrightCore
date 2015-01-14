@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration.Provider;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -9,7 +10,7 @@ namespace NBrightCore.providers
     public abstract class GenXProvider : ProviderBase
     {
 
-        public abstract bool CreateGenControl(string ctrltype, Control container, XmlNode xmlNod, string rootname = "genxml", string databindColum = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null);
+        public abstract bool CreateGenControl(string ctrltype, Control container, XmlNode xmlNod, string rootname = "genxml", string databindColum = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null);
 
         public abstract string GetField(Control ctrl);
 

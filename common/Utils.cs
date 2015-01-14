@@ -910,53 +910,6 @@ namespace NBrightCore.common
             return result.ToString();
         }
 
-        #region "visible state tracking"
-
-        /// <summary>
-        /// Use to keep track of template visible state. 
-        /// </summary>
-        /// <param name="container">Container to track</param>
-        /// <returns></returns>
-        public static bool GetVisibleState(Control container)
-        {
-            var h = (HiddenField) container.FindControl("nbrightvisiblity");
-            if (h == null) return true; // no control to store visible state, always display
-            var l = h.Value.Split(';');
-            if (l.Length == 0) return true;
-            return Convert.ToBoolean(l.Last());
-        }
-
-        public static void SetVisibleState(Control container, Boolean visiblestate)
-        {
-            var h = (HiddenField) container.FindControl("nbrightvisiblity");
-            if (h == null)
-            {
-                h = new HiddenField();
-                h.ID = "nbrightvisiblity";
-                container.Controls.Add(h);
-                h.Value += visiblestate;
-            }
-            else
-            {
-                h.Value = ";" + h.Value;                
-            }
-        }
-
-        public static void RemoveVisibleState(Control container)
-        {
-            var h = (HiddenField) container.FindControl("nbrightvisiblity");
-            if (h != null)
-            {
-                var l = h.Value.Split(';');
-                for (int i = 0; i < (l.Length - 1); i++)
-                {
-                    h.Value += l[i] + ';';
-                }
-                h.Value = h.Value.TrimEnd(';');
-            }
-        }
-
-        #endregion
 
     }
 }
