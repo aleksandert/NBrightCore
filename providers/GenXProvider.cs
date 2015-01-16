@@ -24,5 +24,7 @@ namespace NBrightCore.providers
 
         public abstract String TestOfDataBinding(object sender, EventArgs e);
 
+        public abstract void CtrlItemCommand(object source, RepeaterCommandEventArgs e);
+
     }
 }
