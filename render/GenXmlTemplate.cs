@@ -500,18 +500,21 @@ namespace NBrightCore.render
                     }
                 }
 
-                //check for any providers.
-                var providerList = providers.GenXProviderManager.ProviderList;
-                if (providerList != null)
+                if (dataValue == "")
                 {
-                    foreach (var prov in providerList)
+                    //check for any providers.
+                    var providerList = providers.GenXProviderManager.ProviderList;
+                    if (providerList != null)
                     {
-                        dataValue = prov.Value.TestOfDataBinding(sender, e);
-                        if (dataValue != "")
+                        foreach (var prov in providerList)
                         {
-                            break;
+                            dataValue = prov.Value.TestOfDataBinding(sender, e);
+                            if (dataValue != "")
+                            {
+                                break;
+                            }
                         }
-                    }
+                    }                    
                 }
 
 
