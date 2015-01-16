@@ -198,10 +198,6 @@ namespace NBrightCore.render
                             ctrltype = xmlNod.Attributes["ctrltype"].InnerXml.ToLower();
                         }
 
-                        // Function types can only be processed by token providers, therefore force the core to pass it to a provider.
-                        // This is usually used for "testof" where we want the the provider to do a special test "function". 
-                        if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["function"] != null))) ctrltype = "function:" + ctrltype;
-
                         if (!string.IsNullOrEmpty(ctrltype))
                         {
 							// get any Langauge Resource Data from CMS
@@ -212,6 +208,18 @@ namespace NBrightCore.render
 
                             switch (ctrltype)
                             {
+                                case "testof":
+                                    CreateTestOf(container, xmlNod);
+                                    break;
+                                case "if":
+                                    CreateTestOf(container, xmlNod);
+                                    break;
+                                case "endtestof":
+                                    CreateEndTestOf(container, xmlNod);
+                                    break;
+                                case "endif":
+                                    CreateEndTestOf(container, xmlNod);
+                                    break;
                                 case "fileupload":
                                     CreateFileUpload(container, xmlNod);
                                     break;
@@ -238,18 +246,6 @@ namespace NBrightCore.render
                                     break;
                                 case "checkboxlistof":
                                     CreateCheckBoxListOf(container, xmlNod);
-                                    break;
-                                case "testof":
-                                    CreateTestOf(container, xmlNod);
-                                    break;
-                                case "if":
-                                    CreateTestOf(container, xmlNod);
-                                    break;
-                                case "endtestof":
-                                    CreateEndTestOf(container, xmlNod);
-                                    break;
-                                case "endif":
-                                    CreateEndTestOf(container, xmlNod);
                                     break;
                                 case "htmlof":
                                     CreateHtmlOf(container, xmlNod);
@@ -340,8 +336,6 @@ namespace NBrightCore.render
                                     break;
                                 default:
 
-                                    ctrltype = ctrltype.Replace("function:", ""); //remove a force function test.
-
                                     // use a token namespace if we specify a namepace tag (this is so we can use multiple provider extensions and have unique token names)
                                     if (ctrltype == "tokennamespace" && (xmlNod != null && xmlNod.Attributes != null && (xmlNod.Attributes["value"] != null))) tokennamespace = xmlNod.Attributes["value"].InnerText;
                                     if (!ctrltype.Contains(":") && tokennamespace.Trim() != "") ctrltype = tokennamespace.TrimEnd(':') + ":" + ctrltype;
@@ -389,6 +383,187 @@ namespace NBrightCore.render
             }
 
         }
+
+
+        #region "testing functions"
+
+        private void CreateTestOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal { Text = xmlNod.OuterXml };
+            lc.DataBinding += TestOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
+        private void TestOfDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+            try
+            {
+                lc.Visible = visibleStatus.Last();
+                var xmlDoc = new XmlDataDocument();
+                string testValue = "";
+                string display = "";
+                string displayElse = "";
+                string dataValue = "";
+                var roleValid = true;
+
+                xmlDoc.LoadXml("<root>" + lc.Text + "</root>");
+                var xmlNod = xmlDoc.SelectSingleNode("root/tag");
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["settings"] != null)))
+                {
+                    dataValue = xmlNod.Attributes["settings"].InnerXml;
+                    if (Settings != null && Settings.ContainsKey(dataValue)) dataValue = Settings[dataValue];
+                }
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["testvalue"] != null)))
+                {
+                    testValue = xmlNod.Attributes["testvalue"].InnerXml;
+                    if (testValue.ToLower() == "{username}") testValue = providers.CmsProviderManager.Default.GetCurrentUserName();
+                    if (testValue.ToLower() == "{userid}") testValue = providers.CmsProviderManager.Default.GetCurrentUserId().ToString("");
+                    if (Settings != null)
+                    {
+                        if (testValue.ToLower().StartsWith("settings:"))
+                        {
+                            var setkey = testValue.Replace("Settings:", "").Replace("settings:", "");
+                            if (Settings.ContainsKey(setkey)) testValue = Settings[setkey];
+                        }
+                    }
+                }
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["testinrole"] != null)))
+                {
+                    var testRole = xmlNod.Attributes["testinrole"].InnerXml;
+                    //do test for user rolew
+                    if (!providers.CmsProviderManager.Default.IsInRole(testRole))
+                    {
+                        roleValid = false;
+                    }
+                }
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["display"] != null)))
+                {
+                    display = xmlNod.Attributes["display"].InnerXml;
+                }
+
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["displayelse"] != null)))
+                {
+                    displayElse = xmlNod.Attributes["displayelse"].InnerXml;
+                }
+                else
+                {
+                    if (display == "{ON}") displayElse = "{OFF}";
+                    if (display == "{OFF}") displayElse = "{ON}";
+                }
+
+                if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null)))
+                {
+                    var nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xmlNod.Attributes["xpath"].InnerXml);
+                    if (nod != null)
+                    {
+                        dataValue = nod.InnerText;
+                    }
+                }
+
+                if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null)))
+                {
+                    dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, xmlNod.Attributes["databind"].InnerXml));
+                }
+
+                // special check to see if a sort item has been selected.
+                if (testValue.ToLower() == "sortselected")
+                {
+                    if (Utils.IsNumeric(SortItemId))
+                    {
+                        dataValue = "sortselected";
+                    }
+                }
+
+                //check for alternate row
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["alternate"] != null)))
+                {
+                    testValue = xmlNod.Attributes["alternate"].InnerText.ToLower();
+                    dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, "RowCount"));
+
+                    if (Utils.IsNumeric(dataValue))
+                    {
+                        var rowcount = Convert.ToInt32(dataValue);
+                        if (rowcount % 2 == 0)
+                        {
+                            dataValue = "true";
+                        }
+                        else
+                        {
+                            dataValue = "false";
+                        }
+                    }
+                }
+
+                //check for any providers.
+                var providerList = providers.GenXProviderManager.ProviderList;
+                if (providerList != null)
+                {
+                    foreach (var prov in providerList)
+                    {
+                        dataValue = prov.Value.TestOfDataBinding(sender, e, visibleStatus.Last());
+                        if (dataValue != "")
+                        {
+                            break;
+                        }
+                    }
+                }
+
+
+                //get test value 
+                string output;
+                if ((dataValue == testValue) & roleValid)
+                {
+                    output = display;
+                }
+                else
+                {
+                    output = displayElse;
+                }
+
+                // If the Visible flag is OFF then keep it off, even if the child test is true
+                // This allows nested tests to function correctly, by using the parent result.
+                if (!visibleStatus.Last())
+                {
+                    if (output == "{ON}" | output == "{OFF}") visibleStatus.Add(false); // only add level on {} testof
+                }
+                else
+                {
+                    if (output == "{ON}") visibleStatus.Add(true);
+                    if (output == "{OFF}") visibleStatus.Add(false);
+                }
+
+                if (visibleStatus.Last() && output != "{ON}") lc.Text = output;
+                if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
+            }
+            catch (Exception)
+            {
+                lc.Text = "";
+            }
+        }
+
+        private void CreateEndTestOf(Control container, XmlNode xmlNod)
+        {
+            var lc = new Literal { Text = xmlNod.OuterXml };
+            lc.DataBinding += EndTestOfDataBinding;
+            container.Controls.Add(lc);
+        }
+
+        private void EndTestOfDataBinding(object sender, EventArgs e)
+        {
+            var lc = (Literal)sender;
+            var container = (IDataItemContainer)lc.NamingContainer;
+            if (visibleStatus.Count > 1) visibleStatus.RemoveAt(visibleStatus.Count - 1);
+            lc.Text = "";  //always display nothign for this, it just to stop testof state.
+        }
+
+
+        #endregion
 
         #region "create controls"
 
@@ -505,20 +680,6 @@ namespace NBrightCore.render
             }
 
             lc.DataBinding += ChkBoxListOfDataBinding;
-            container.Controls.Add(lc);
-        }
-
-        private void CreateTestOf(Control container, XmlNode xmlNod)
-        {
-            var lc = new Literal {Text = xmlNod.OuterXml};
-            lc.DataBinding += TestOfDataBinding;
-            container.Controls.Add(lc);
-        }
-
-        private void CreateEndTestOf(Control container, XmlNode xmlNod)
-        {
-            var lc = new Literal { Text = xmlNod.OuterXml };
-            lc.DataBinding += EndTestOfDataBinding;
             container.Controls.Add(lc);
         }
 
@@ -1735,153 +1896,6 @@ namespace NBrightCore.render
                 lc.Text = "";
             }
         }
-
-        private void TestOfDataBinding(object sender, EventArgs e)
-        {
-            var lc = (Literal)sender;
-            var container = (IDataItemContainer)lc.NamingContainer;
-            try
-            {
-                lc.Visible = visibleStatus.Last();
-                var xmlDoc = new XmlDataDocument();
-                string testValue = "";
-                string display = "";
-                string displayElse = "";
-                string dataValue = "";
-                var roleValid = true;
-
-                xmlDoc.LoadXml("<root>" + lc.Text + "</root>");
-                var xmlNod = xmlDoc.SelectSingleNode("root/tag");
-
-                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["settings"] != null)))
-                {
-                    dataValue = xmlNod.Attributes["settings"].InnerXml;
-                    if (Settings != null && Settings.ContainsKey(dataValue)) dataValue = Settings[dataValue];
-                }
-
-                if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["testvalue"] != null)))
-                {
-                    testValue = xmlNod.Attributes["testvalue"].InnerXml;
-                    if (testValue.ToLower()=="{username}") testValue = providers.CmsProviderManager.Default.GetCurrentUserName();
-                    if (testValue.ToLower() == "{userid}") testValue = providers.CmsProviderManager.Default.GetCurrentUserId().ToString("");
-                    if (Settings != null)
-                    {
-                        if (testValue.ToLower().StartsWith("settings:"))
-                        {
-                            var setkey = testValue.Replace("Settings:", "").Replace("settings:", "");
-                            if (Settings.ContainsKey(setkey)) testValue = Settings[setkey];
-                        }
-                    }
-                }
-
-                if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["testinrole"] != null)))
-                {
-                    var testRole = xmlNod.Attributes["testinrole"].InnerXml;
-                    //do test for user rolew
-                    if (!providers.CmsProviderManager.Default.IsInRole(testRole))
-                    {
-                        roleValid = false;
-                    }
-                }
-
-                if (xmlNod != null && (xmlNod.Attributes != null &&  (xmlNod.Attributes["display"] != null)))
-                {
-                    display = xmlNod.Attributes["display"].InnerXml;
-                }
-
-                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["displayelse"] != null)))
-                {
-                    displayElse = xmlNod.Attributes["displayelse"].InnerXml;
-                }
-                else
-                {
-                    if (display == "{ON}") displayElse = "{OFF}";
-                    if (display == "{OFF}") displayElse = "{ON}";
-                }
-
-				if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["xpath"] != null)))
-				{
-					var nod = GenXmlFunctions.GetGenXmLnode(DataBinder.Eval(container.DataItem, DatabindColumn).ToString(), xmlNod.Attributes["xpath"].InnerXml);
-					if (nod != null)
-					{
-						dataValue = nod.InnerText;
-					}
-				}
-
-				if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null)))
-                {
-                    dataValue =Convert.ToString(DataBinder.Eval(container.DataItem, xmlNod.Attributes["databind"].InnerXml));
-                }
-
-                // special check to see if a sort item has been selected.
-                if (testValue.ToLower() == "sortselected")
-                {
-                    if (Utils.IsNumeric(SortItemId))
-                    {
-                        dataValue = "sortselected";
-                    }                    
-                }
-
-                //check for alternate row
-                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["alternate"] != null)))
-                {
-                    testValue = xmlNod.Attributes["alternate"].InnerText.ToLower();
-                    dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, "RowCount"));
-
-                    if (Utils.IsNumeric(dataValue))
-                    {
-                        var rowcount = Convert.ToInt32(dataValue);
-                        if (rowcount % 2 == 0)
-                        {
-                            dataValue = "true";
-                        }
-                        else
-                        {
-                            dataValue = "false";
-                        }
-                   }
-                }
-
-                //get test value 
-                string output;
-				if ((dataValue == testValue) & roleValid)
-                {
-                    output = display;
-                }
-                else
-                {
-                    output = displayElse;
-                }
-
-                // If the Visible flag is OFF then keep it off, even if the child test is true
-                // This allows nested tests to function correctly, by using the parent result.
-                if (!visibleStatus.Last()) 
-                {
-                    if (output == "{ON}" | output == "{OFF}") visibleStatus.Add(false); // only add level on {} testof
-                }
-                else
-                {
-                    if (output == "{ON}") visibleStatus.Add(true);
-                    if (output == "{OFF}") visibleStatus.Add(false);
-                }
-
-                if (visibleStatus.Last() && output != "{ON}") lc.Text = output;
-                if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
-            }
-            catch (Exception)
-            {
-                lc.Text = "";
-            }
-        }
-
-        private void EndTestOfDataBinding(object sender, EventArgs e)
-        {
-            var lc = (Literal)sender;
-            var container = (IDataItemContainer)lc.NamingContainer;
-            if (visibleStatus.Count > 1) visibleStatus.RemoveAt(visibleStatus.Count - 1);
-            lc.Text = "";  //always display nothign for this, it just to stop testof state.
-        }
-
 
         private void HtmlOfDataBinding(object sender, EventArgs e)
         {
