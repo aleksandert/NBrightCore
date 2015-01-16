@@ -22,7 +22,7 @@ namespace NBrightCore.providers
 
         public abstract object PopulateGenObject(List<Control> genCtrls, object obj);
 
-        public abstract String TestOfDataBinding(object sender, EventArgs e, Boolean currentVisibleStatus);
+        public abstract String TestOfDataBinding(object sender, EventArgs e);
 
     }
 }

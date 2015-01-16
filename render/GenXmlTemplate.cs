@@ -506,7 +506,7 @@ namespace NBrightCore.render
                 {
                     foreach (var prov in providerList)
                     {
-                        dataValue = prov.Value.TestOfDataBinding(sender, e, visibleStatus.Last());
+                        dataValue = prov.Value.TestOfDataBinding(sender, e);
                         if (dataValue != "")
                         {
                             break;
