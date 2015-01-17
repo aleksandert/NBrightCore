@@ -500,6 +500,10 @@ namespace NBrightCore.render
                     }
                 }
 
+                // do test on static
+                if (xmlNod.Attributes["staticvalue"] != null) dataValue = xmlNod.Attributes["staticvalue"].InnerText;
+
+
                 if (dataValue == "")
                 {
                     //check for any providers.
@@ -508,9 +512,11 @@ namespace NBrightCore.render
                     {
                         foreach (var prov in providerList)
                         {
-                            dataValue = prov.Value.TestOfDataBinding(sender, e);
-                            if (dataValue != "")
+                            var testData = prov.Value.TestOfDataBinding(sender, e);
+                            if (testData.DataValue != null)
                             {
+                                dataValue = testData.DataValue;
+                                if (testData.TestValue != null) testValue = testData.TestValue;
                                 break;
                             }
                         }

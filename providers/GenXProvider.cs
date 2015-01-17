@@ -22,9 +22,33 @@ namespace NBrightCore.providers
 
         public abstract object PopulateGenObject(List<Control> genCtrls, object obj);
 
-        public abstract String TestOfDataBinding(object sender, EventArgs e);
+        /// <summary>
+        /// Allow the provider to do specific testing
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <returns>TestOfData</returns>
+        public abstract TestOfData TestOfDataBinding(object sender, EventArgs e);
 
+        /// <summary>
+        /// Allow a proivider to accept and process command buttons
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="e"></param>
         public abstract void CtrlItemCommand(object source, RepeaterCommandEventArgs e);
 
     }
+
+    /// <summary>
+    /// Class to hold testof values
+    /// </summary>
+    public class TestOfData
+    {
+        public String DataValue { get; set; }
+        /// <summary>
+        /// Test value of token. (on return from provider an NULL value will be ignored and the token testvalue used)
+        /// </summary>
+        public String TestValue { get; set; }
+    }
+
 }
