@@ -392,6 +392,17 @@ namespace NBrightCore.render
             var lc = new Literal { Text = xmlNod.OuterXml };
             lc.DataBinding += TestOfDataBinding;
             container.Controls.Add(lc);
+
+            //we may have settings test in the provider, so create a dummay control, just to pass all the settings
+            var providerList = providers.GenXProviderManager.ProviderList;
+            if (providerList != null)
+            {
+                foreach (var prov in providerList)
+                {
+                    var providerCtrl = prov.Value.CreateGenControl("populatesettings", container, xmlNod, Rootname, DatabindColumn, EditCultureCode, Settings, visibleStatus);
+                }
+            }
+
         }
 
         private void TestOfDataBinding(object sender, EventArgs e)
@@ -407,6 +418,7 @@ namespace NBrightCore.render
                 string displayElse = "";
                 string dataValue = "";
                 var roleValid = true;
+                var dotestprovider = true; // use a flag to check if we do have a dtavalue but it's empty
 
                 xmlDoc.LoadXml("<root>" + lc.Text + "</root>");
                 var xmlNod = xmlDoc.SelectSingleNode("root/tag");
@@ -415,6 +427,7 @@ namespace NBrightCore.render
                 {
                     dataValue = xmlNod.Attributes["settings"].InnerXml;
                     if (Settings != null && Settings.ContainsKey(dataValue)) dataValue = Settings[dataValue];
+                    dotestprovider = false;
                 }
 
                 if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["testvalue"] != null)))
@@ -463,12 +476,14 @@ namespace NBrightCore.render
                     if (nod != null)
                     {
                         dataValue = nod.InnerText;
+                        dotestprovider = false;
                     }
                 }
 
                 if (container.DataItem != null && xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null)))
                 {
                     dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, xmlNod.Attributes["databind"].InnerXml));
+                    dotestprovider = false;
                 }
 
                 // special check to see if a sort item has been selected.
@@ -477,6 +492,7 @@ namespace NBrightCore.render
                     if (Utils.IsNumeric(SortItemId))
                     {
                         dataValue = "sortselected";
+                        dotestprovider = false;
                     }
                 }
 
@@ -485,6 +501,7 @@ namespace NBrightCore.render
                 {
                     testValue = xmlNod.Attributes["alternate"].InnerText.ToLower();
                     dataValue = Convert.ToString(DataBinder.Eval(container.DataItem, "RowCount"));
+                    dotestprovider = false;
 
                     if (Utils.IsNumeric(dataValue))
                     {
@@ -501,10 +518,14 @@ namespace NBrightCore.render
                 }
 
                 // do test on static
-                if (xmlNod.Attributes["staticvalue"] != null) dataValue = xmlNod.Attributes["staticvalue"].InnerText;
+                if (xmlNod.Attributes["staticvalue"] != null)
+                {
+                    dotestprovider = false;
+                    dataValue = xmlNod.Attributes["staticvalue"].InnerText;
+                }
 
 
-                if (dataValue == "")
+                if (dotestprovider)
                 {
                     //check for any providers.
                     var providerList = providers.GenXProviderManager.ProviderList;
@@ -513,7 +534,7 @@ namespace NBrightCore.render
                         foreach (var prov in providerList)
                         {
                             var testData = prov.Value.TestOfDataBinding(sender, e);
-                            if (testData.DataValue != null)
+                            if (testData != null && testData.DataValue != null)
                             {
                                 dataValue = testData.DataValue;
                                 if (testData.TestValue != null) testValue = testData.TestValue;
@@ -2099,7 +2120,7 @@ namespace NBrightCore.render
                             {
                                 var datavalue = xmlNoda.Attributes["data"].Value;
                                 //use the data attribute if there
-                                if ((chk.Items.FindByValue(datavalue).Value != null))
+                                if ((chk.Items.FindByValue(datavalue) != null))
                                 {
                                     chk.Items.FindByValue(datavalue).Selected =
                                         Convert.ToBoolean(xmlNoda.Attributes["value"].Value);
