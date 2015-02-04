@@ -2464,6 +2464,22 @@ namespace NBrightCore.render
             return sb.ToString();
         }
 
+        public static string RenderRepeater(IList objList, GenXmlTemplate genXmlTemplate)
+        {
+            var dlGen = new Repeater { ItemTemplate = genXmlTemplate};
+
+            dlGen.DataSource = objList;
+            dlGen.DataBind();
+
+            //Get the rendered HTML
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            var htmlTw = new HtmlTextWriter(sw);
+            dlGen.RenderControl(htmlTw);
+
+            return sb.ToString();
+        }
+
 
         public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null)
         {
@@ -2838,7 +2854,7 @@ namespace NBrightCore.render
             return strOut;
         }
 
-        public static string GetSqlFilterText(string xpath, string sqlType, string searchText, string dataField = "XMLData")
+        public static string GetSqlFilterText(string xpath, string sqlType, string searchText, string dataField = "XMLData", string testoperator = "=")
         {
             var strOut = "";
 
@@ -2854,13 +2870,13 @@ namespace NBrightCore.render
                 strOut += "(";
                 if (xpath == "")
                 {
-                    strOut += " " + dataField + " = '" + searchText + "' ";
+                    strOut += " " + dataField + " " + testoperator + " '" + searchText + "' ";
                 }
                 else
                 {
                     strOut += "([" + dataField + "].value('(" + xpath;
                     strOut += ")[1]', 'nvarchar(max)";
-                    strOut += "') = '" + searchText + Convert.ToChar("'");
+                    strOut += "') " + testoperator + " '" + searchText + Convert.ToChar("'");
                     strOut += ")";
                 }
                 strOut += ")";
