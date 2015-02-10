@@ -763,6 +763,11 @@ namespace NBrightCore.render
                 rbl.Attributes.Add("searchindex", "1");
             }
 
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["required"] != null))
+            {
+                rbl.Attributes.Add("required", xmlNod.Attributes["required"].InnerXml);
+            }
+
             if (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null))
             {
                 rbl.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
