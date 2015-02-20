@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -545,16 +546,60 @@ namespace NBrightCore.render
                 }
 
 
-                //get test value 
+                // ---- DO TEST ---------------------------------------
                 string output;
-                if ((dataValue == testValue) & roleValid)
+                if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["regex"] != null)))
                 {
-                    output = display;
+                    // do a regexpr pattern match test
+                    var match = Regex.Match(dataValue, xmlNod.Attributes["regex"].InnerText, RegexOptions.IgnoreCase);
+                    if (match.Success)
+                        output = display;
+                    else
+                        output = displayElse;
                 }
                 else
                 {
-                    output = displayElse;
+                    // check if we have a greater or lesser then test( < or > at front)
+                    // This is also escaped by using >> or << at the front, so check for that first.
+                    if (testValue.StartsWith("&lt;&lt;") || testValue.StartsWith("&gt;&gt;"))
+                    {
+                        // escape < and >
+                        testValue = testValue.Replace("&lt;&lt;", "&lt;").Replace("&gt;&gt;", "&gt;");
+                        if ((dataValue == testValue) & roleValid)
+                            output = display;
+                        else
+                            output = displayElse;
+                    }
+                    else if (testValue.StartsWith("&lt;"))
+                    {
+                        // do greater ot lesser than (Assume numeric!!)
+                        testValue = testValue.Replace("&lt;", "");
+                        if (!Utils.IsNumeric(dataValue)) dataValue = "0";
+                        if (!Utils.IsNumeric(testValue)) testValue = "0";
+                        if ((Convert.ToDouble(dataValue) < Convert.ToDouble(testValue)) & roleValid)
+                            output = display;
+                        else
+                            output = displayElse;
+                    }
+                    else if (testValue.StartsWith("&gt;"))
+                    {
+                        testValue = testValue.Replace("&gt;", "");
+                        if (!Utils.IsNumeric(dataValue)) dataValue = "0";
+                        if (!Utils.IsNumeric(testValue)) testValue = "0";
+                        if ((Convert.ToDouble(dataValue) > Convert.ToDouble(testValue)) & roleValid)
+                            output = display;
+                        else
+                            output = displayElse;
+                    }
+                    else
+                    {
+                        if ((dataValue == testValue) & roleValid)
+                            output = display;
+                        else
+                            output = displayElse;
+                    }
                 }
+
 
                 // If the Visible flag is OFF then keep it off, even if the child test is true
                 // This allows nested tests to function correctly, by using the parent result.
