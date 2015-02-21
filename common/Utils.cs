@@ -566,11 +566,13 @@ namespace NBrightCore.common
         /// CleanInput strips out all nonalphanumeric characters except periods (.), at symbols (@), and hyphens (-), and returns the remaining string. However, you can modify the regular expression pattern so that it strips out any characters that should not be included in an input string.
         /// </summary>
         /// <param name="strIn">Dirty String</param>
+        /// <param name="regexpr"></param>
         /// <returns>Clean String</returns>
-        public static string CleanInput(string strIn)
+        public static string CleanInput(string strIn, string regexpr = "")
         {
+            if (regexpr == "") regexpr = @"[^\w\.@-]";
             // Replace invalid characters with empty strings. 
-            return Regex.Replace(strIn, @"[^\w\.@-]", "", RegexOptions.None);
+            return Regex.Replace(strIn, regexpr, "", RegexOptions.None);
         }
 
         /// <summary>
