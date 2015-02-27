@@ -562,6 +562,11 @@ namespace NBrightCore.common
             return strOut;
         }
 
+        public static string CleanInput(string strIn)
+        {
+            return CleanInput(strIn, "");
+        }
+
         /// <summary>
         /// CleanInput strips out all nonalphanumeric characters except periods (.), at symbols (@), and hyphens (-), and returns the remaining string. However, you can modify the regular expression pattern so that it strips out any characters that should not be included in an input string.
         /// </summary>
@@ -574,6 +579,142 @@ namespace NBrightCore.common
             // Replace invalid characters with empty strings. 
             return Regex.Replace(strIn, regexpr, "", RegexOptions.None);
         }
+
+        /// <summary>
+/// Produces optional, URL-friendly version of a title, "like-this-one". 
+/// hand-tuned for speed, reflects performance refactoring contributed
+/// by John Gietzen (user otac0n) 
+/// </summary>
+public static string UrlFriendly(string title)
+{
+    if (title == null) return "";
+
+    const int maxlen = 80;
+    int len = title.Length;
+    bool prevdash = false;
+    var sb = new StringBuilder(len);
+    char c;
+
+    for (int i = 0; i < len; i++)
+    {
+        c = title[i];
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
+        {
+            sb.Append(c);
+            prevdash = false;
+        }
+        else if (c >= 'A' && c <= 'Z')
+        {
+            // tricky way to convert to lowercase
+            sb.Append((char)(c | 32));
+            prevdash = false;
+        }
+        else if (c == ' ' || c == ',' || c == '.' || c == '/' || 
+            c == '\\' || c == '-' || c == '_' || c == '=')
+        {
+            if (!prevdash && sb.Length > 0)
+            {
+                sb.Append('-');
+                prevdash = true;
+            }
+        }
+        else if ((int)c >= 128)
+        {
+            int prevlen = sb.Length;
+            sb.Append(RemapInternationalCharToAscii(c));
+            if (prevlen != sb.Length) prevdash = false;
+        }
+        if (i == maxlen) break;
+    }
+
+    if (prevdash)
+        return sb.ToString().Substring(0, sb.Length - 1);
+    else
+        return sb.ToString();
+}
+
+public static string RemapInternationalCharToAscii(char c)
+{
+    string s = c.ToString().ToLowerInvariant();
+    if ("àåáâäãåą".Contains(s))
+    {
+        return "a";
+    }
+    else if ("èéêëę".Contains(s))
+    {
+        return "e";
+    }
+    else if ("ìíîïı".Contains(s))
+    {
+        return "i";
+    }
+    else if ("òóôõöøőð".Contains(s))
+    {
+        return "o";
+    }
+    else if ("ùúûüŭů".Contains(s))
+    {
+        return "u";
+    }
+    else if ("çćčĉ".Contains(s))
+    {
+        return "c";
+    }
+    else if ("żźž".Contains(s))
+    {
+        return "z";
+    }
+    else if ("śşšŝ".Contains(s))
+    {
+        return "s";
+    }
+    else if ("ñń".Contains(s))
+    {
+        return "n";
+    }
+    else if ("ýÿ".Contains(s))
+    {
+        return "y";
+    }
+    else if ("ğĝ".Contains(s))
+    {
+        return "g";
+    }
+    else if (c == 'ř')
+    {
+        return "r";
+    }
+    else if (c == 'ł')
+    {
+        return "l";
+    }
+    else if (c == 'đ')
+    {
+        return "d";
+    }
+    else if (c == 'ß')
+    {
+        return "ss";
+    }
+    else if (c == 'Þ')
+    {
+        return "th";
+    }
+    else if (c == 'ĥ')
+    {
+        return "h";
+    }
+    else if (c == 'ĵ')
+    {
+        return "j";
+    }
+    else
+    {
+        return "";
+    }
+}
+
+
 
         /// <summary>
         /// Strip accents from string.
