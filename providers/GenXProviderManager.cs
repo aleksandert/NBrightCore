@@ -59,7 +59,7 @@ namespace NBrightCore.providers
             }
         }
 
-        public static void AddProvider(XmlDataDocument xmlProviderList)
+        public static void AddProvider(XmlDocument xmlProviderList)
         {
             if (xmlProviderList != null)
             {
@@ -87,7 +87,7 @@ namespace NBrightCore.providers
                 var providerConfigXml = "<root><providers><genx>NBrightDNN,NBrightDNN.render.GenXmlTemplateExt</genx></providers></root>";
                 try
                 {
-                    var xmlDoc = new XmlDataDocument();
+                    var xmlDoc = new XmlDocument();
                     xmlDoc.LoadXml(providerConfigXml);
 
                     var xmlList = xmlDoc.SelectNodes("/root/providers/genx");

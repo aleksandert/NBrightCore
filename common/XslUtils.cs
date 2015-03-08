@@ -14,7 +14,7 @@ namespace NBrightCore.common
 
             try
             {
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
 
                 xmlDoc.LoadXml(xmlData);
 
@@ -38,7 +38,7 @@ namespace NBrightCore.common
             try
             {
 
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
 
                 xmlDoc.LoadXml(xmlData);
 

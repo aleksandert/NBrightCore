@@ -16,9 +16,9 @@ namespace NBrightCore.providers
 
         public abstract void SetField(Control ctrl, string newValue);
 
-        public abstract string GetGenXml(List<Control> genCtrls, XmlDataDocument xmlDoc, string originalXml, string folderMapPath, string xmlRootName = "genxml");
+        public abstract string GetGenXml(List<Control> genCtrls, XmlDocument xmlDoc, string originalXml, string folderMapPath, string xmlRootName = "genxml");
 
-        public abstract string GetGenXmlTextBox(List<Control> genCtrls, XmlDataDocument xmlDoc, string originalXml, string folderMapPath, string xmlRootName = "genxml");
+        public abstract string GetGenXmlTextBox(List<Control> genCtrls, XmlDocument xmlDoc, string originalXml, string folderMapPath, string xmlRootName = "genxml");
 
         public abstract object PopulateGenObject(List<Control> genCtrls, object obj);
 

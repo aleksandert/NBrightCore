@@ -768,7 +768,7 @@ public static string RemapInternationalCharToAscii(char c)
             if (File.Exists(DefaultConfigMapPath))
             {
 
-                var xmlConfigDoc = new XmlDataDocument();
+                var xmlConfigDoc = new XmlDocument();
                 XmlNodeList xmlNodList = null;
                 xmlConfigDoc.Load(DefaultConfigMapPath);
 
@@ -826,7 +826,7 @@ public static string RemapInternationalCharToAscii(char c)
                 //overwrite with secondary file data
                 if (File.Exists(SecondaryConfigMapPath))
                 {
-                    xmlConfigDoc = new XmlDataDocument();
+                    xmlConfigDoc = new XmlDocument();
                     xmlConfigDoc.Load(SecondaryConfigMapPath);
                     foreach (var configName in configNameCSV.Split(','))
                     {
@@ -951,9 +951,9 @@ public static string RemapInternationalCharToAscii(char c)
         /// </summary>
         /// <param name="xmlConfig"></param>
         /// <returns></returns>
-        public static XmlDataDocument ConfigConvertToXml()
+        public static XmlDocument ConfigConvertToXml()
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
 
             return xmlDoc;
         }

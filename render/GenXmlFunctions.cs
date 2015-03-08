@@ -44,7 +44,7 @@ namespace NBrightCore.render
 
         public static void DeleteAllUploadedFiles(string itemXml, string folderMapPath,bool thumbsOnly = false)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(itemXml);
 
             //need to loop on the genxml/files/ctrl section to get the ctrl name 
@@ -82,7 +82,7 @@ namespace NBrightCore.render
         {
             if (!string.IsNullOrEmpty(xmlData))
             {
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(xmlData);
                 var xmlNods = xmlDoc.SelectNodes("genxml/files/*");
                 if (xmlNods != null)
@@ -117,7 +117,7 @@ namespace NBrightCore.render
         {
             if (!string.IsNullOrEmpty(xmlData))
             {
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(xmlData);
                 var xmlNods = xmlDoc.SelectNodes("genxml/files/*");
                 if (xmlNods != null)
@@ -466,7 +466,7 @@ namespace NBrightCore.render
         }
 
 
-        public static string GetCheckBoxListValues(XmlDataDocument xmlDoc, string xpath)
+        public static string GetCheckBoxListValues(XmlDocument xmlDoc, string xpath)
         {
             var strRtn = "";
             if (xmlDoc != null)
@@ -995,7 +995,7 @@ namespace NBrightCore.render
             }
 
             //load original XML for update  
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
             if (!String.IsNullOrEmpty(originalXml))
             {
                 xmlDoc.LoadXml(originalXml);
@@ -1437,13 +1437,13 @@ namespace NBrightCore.render
         {
 
             //load original XML for update  
-            var xmlDoc1 = new XmlDataDocument();
+            var xmlDoc1 = new XmlDocument();
             if (!String.IsNullOrEmpty(xmlAjaxData))
             {
                 xmlDoc1.LoadXml(xmlAjaxData);
 
                 //load original XML for update  
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
                 if (!String.IsNullOrEmpty(originalXml))
                 {
                     xmlDoc.LoadXml(originalXml);
@@ -1932,7 +1932,7 @@ namespace NBrightCore.render
 	}
 
 
-        public static void ReplaceXmLatt(XmlDataDocument xmlDoc, string xPath, string newValue)
+        public static void ReplaceXmLatt(XmlDocument xmlDoc, string xPath, string newValue)
         {
             var nod = xmlDoc.SelectSingleNode(xPath);
             if ((nod != null))
@@ -1958,12 +1958,12 @@ namespace NBrightCore.render
         }
 
 
-        public static void ReplaceXmlNode(XmlDataDocument xmlDoc, string xPath, string newValue)
+        public static void ReplaceXmlNode(XmlDocument xmlDoc, string xPath, string newValue)
         {
             ReplaceXmlNode(xmlDoc, xPath, newValue, true);
         }
 
-        public static void ReplaceXmlNode(XmlDataDocument xmlDoc, string xPath, string newValue, bool cdata)
+        public static void ReplaceXmlNode(XmlDocument xmlDoc, string xPath, string newValue, bool cdata)
         {
             var nod = xmlDoc.SelectSingleNode(xPath);
             if ((nod != null))
@@ -2003,12 +2003,12 @@ namespace NBrightCore.render
         }
 
 
-        public static void MergeXmlNodeText(XmlDataDocument xmlDoc, XmlDataDocument xmlSourceDoc, string xPathStr)
+        public static void MergeXmlNodeText(XmlDocument xmlDoc, XmlDocument xmlSourceDoc, string xPathStr)
         {
             MergeXmlNodeText(xmlDoc, xmlSourceDoc, xPathStr, "");
         }
 
-        public static void MergeXmlNodeText(XmlDataDocument xmlDoc, XmlDataDocument xmlSourceDoc, string xPathStr, string xPathSource)
+        public static void MergeXmlNodeText(XmlDocument xmlDoc, XmlDocument xmlSourceDoc, string xPathStr, string xPathSource)
         {
             if (String.IsNullOrEmpty(xPathSource))
                 xPathSource = xPathStr;
@@ -2027,7 +2027,7 @@ namespace NBrightCore.render
 
         public static string SetGenXmlValue(string dataXml, string xpath, string Value, bool cdata = true)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(dataXml);
             if (xpath.Contains("@"))
                 ReplaceXmLatt(xmlDoc, xpath, Value);
@@ -2144,7 +2144,7 @@ namespace NBrightCore.render
 
         public static XmlNode GetTokenPropXmLnode(string tagXmlString)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
             var strXml = HttpUtility.HtmlDecode(tagXmlString);
             strXml = "<root>" + strXml + "</root>";
 
@@ -2519,7 +2519,7 @@ namespace NBrightCore.render
 
         public static string GetGenControlPropety(string xmLproperties, string propertyname)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
 
             xmlDoc.LoadXml("<root>" + xmLproperties + "</root>");
             var xmlNod2 = xmlDoc.SelectSingleNode("root/tag");
@@ -3004,7 +3004,7 @@ namespace NBrightCore.render
                         var ctrltype = "";
                         var ctrlxpath = "";
 
-                        var xmlDoc = new XmlDataDocument();
+                        var xmlDoc = new XmlDocument();
                         xmlDoc.LoadXml(strXml);
                         var xmlNod = xmlDoc.SelectSingleNode("root/tag");
                         if (xmlNod != null && (xmlNod.Attributes != null && (xmlNod.Attributes["type"] != null)))

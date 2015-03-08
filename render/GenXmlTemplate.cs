@@ -413,7 +413,7 @@ namespace NBrightCore.render
             try
             {
                 lc.Visible = visibleStatus.Last();
-                var xmlDoc = new XmlDataDocument();
+                var xmlDoc = new XmlDocument();
                 string testValue = "";
                 string display = "";
                 string displayElse = "";

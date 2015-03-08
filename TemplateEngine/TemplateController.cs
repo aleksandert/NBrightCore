@@ -378,7 +378,7 @@ namespace NBrightCore.TemplateEngine
 
         public void ImportThemeXml(string xmldata, bool overwrite)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
 
             xmlDoc.LoadXml(xmldata);
 
@@ -395,7 +395,7 @@ namespace NBrightCore.TemplateEngine
 
         public void ImportXml(string xmldata, bool overwrite)
         {
-            var xmlDoc = new XmlDataDocument();
+            var xmlDoc = new XmlDocument();
 
             xmlDoc.LoadXml(xmldata);
 
