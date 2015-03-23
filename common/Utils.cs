@@ -589,7 +589,7 @@ public static string UrlFriendly(string title)
 {
     if (title == null) return "";
 
-    const int maxlen = 80;
+    const int maxlen = 255;
     int len = title.Length;
     bool prevdash = false;
     var sb = new StringBuilder(len);
