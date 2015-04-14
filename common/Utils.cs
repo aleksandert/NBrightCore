@@ -1079,5 +1079,20 @@ public static string RemapInternationalCharToAscii(char c)
                 url.Scheme, url.Host, port, VirtualPathUtility.ToAbsolute(relativeUrl));
         }
 
+        public static string GetRelativeUrl(string fullUrl)
+        {
+            try
+            {
+                Uri uri = new Uri(fullUrl);//fullUrl is absoluteUrl   
+                string relativeUrl = uri.AbsolutePath;//The Uri property AbsolutePath gives the relativeUrl   
+
+                return relativeUrl;
+            }
+            catch (Exception ex)
+            {
+                return fullUrl;
+                //throw ex;   
+            }
+        } 
     }
 }
