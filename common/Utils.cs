@@ -589,7 +589,7 @@ public static string UrlFriendly(string title)
 {
     if (title == null) return "";
 
-    const int maxlen = 80;
+    const int maxlen = 255;
     int len = title.Length;
     bool prevdash = false;
     var sb = new StringBuilder(len);
@@ -1079,5 +1079,20 @@ public static string RemapInternationalCharToAscii(char c)
                 url.Scheme, url.Host, port, VirtualPathUtility.ToAbsolute(relativeUrl));
         }
 
+        public static string GetRelativeUrl(string fullUrl)
+        {
+            try
+            {
+                Uri uri = new Uri(fullUrl);//fullUrl is absoluteUrl   
+                string relativeUrl = uri.AbsolutePath;//The Uri property AbsolutePath gives the relativeUrl   
+
+                return relativeUrl;
+            }
+            catch (Exception ex)
+            {
+                return fullUrl;
+                //throw ex;   
+            }
+        } 
     }
 }

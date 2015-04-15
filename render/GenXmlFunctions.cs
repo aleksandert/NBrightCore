@@ -2720,6 +2720,7 @@ namespace NBrightCore.render
                     }
                 }
             }
+            if (orderValue == "{bycategoryproduct}") return orderValue; // special custom sort on each category
             return GetSqlOrderByWithValue(orderValue);
         }
 
