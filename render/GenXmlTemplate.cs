@@ -848,6 +848,10 @@ namespace NBrightCore.render
                             li.Value = strListValue[lp];
                             break;
                     }
+                    if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+                    {
+                        li.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
+                    }
                     rbl.Items.Add(li);
                 }
 
@@ -907,6 +911,10 @@ namespace NBrightCore.render
                             li.Value = strListValue[lp];
                             break;
                     }
+                    if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+                    {
+                        li.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
+                    }
                     if (li.Value != "") chk.Items.Add(li);
                 }
             }
@@ -920,6 +928,10 @@ namespace NBrightCore.render
                     var li2 = new ListItem();
                     li2.Text = tItem.Value;
                     li2.Value = tItem.Key.ToString("");
+                    if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+                    {
+                        li2.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
+                    }
                     if (li2.Value != "") chk.Items.Add(li2);
                 }
             }
@@ -943,6 +955,12 @@ namespace NBrightCore.render
             {
                 chk.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
             }
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+            {
+                chk.InputAttributes.Add("update", xmlNod.Attributes["update"].InnerXml);
+            }
+
 
             if (xmlNod.Attributes != null && (xmlNod.Attributes["searchindex"] != null))
             {
@@ -985,6 +1003,11 @@ namespace NBrightCore.render
             if (xmlNod.Attributes != null && (xmlNod.Attributes["databind"] != null))
             {
                 ddl.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
+            }
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+            {
+                ddl.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
             }
 
             if (xmlNod.Attributes != null && (xmlNod.Attributes["datatabs"] != null))
@@ -1149,6 +1172,11 @@ namespace NBrightCore.render
             if (xmlNod.Attributes != null && (xmlNod.Attributes["required"] != null))
             {
                 txt.Attributes.Add("required", xmlNod.Attributes["required"].InnerXml);
+            }
+
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+            {
+                txt.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
             }
 
             if (xmlNod.Attributes != null && (xmlNod.Attributes["datatype"] != null) && xmlNod.Attributes["datatype"].InnerXml == "email")
@@ -1368,6 +1396,12 @@ namespace NBrightCore.render
                 {
                     hid.Attributes.Add("databind", xmlNod.Attributes["databind"].InnerXml);
                 }
+
+                if (xmlNod.Attributes != null && (xmlNod.Attributes["update"] != null))
+                {
+                    hid.Attributes.Add("update", xmlNod.Attributes["update"].InnerXml);
+                }
+
                 if ((xmlNod.Attributes["xpath"] != null))
                 {
                     hid.Attributes.Add("xpath", xmlNod.Attributes["xpath"].InnerXml);
