@@ -1464,9 +1464,11 @@ namespace NBrightCore.render
                     foreach (XmlNode nod in xmlNodeList)
                     {
                         var ajaxId = "";
+                        var updateStatus = "";
                         if (nod.Attributes != null)
                         {
                             ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
+                            if (nod.Attributes["upd"] != null) updateStatus = " update=\"" + nod.Attributes["upd"].InnerText + "\" ";
                         }
 
                         if (!String.IsNullOrEmpty(originalXml))
@@ -1477,22 +1479,22 @@ namespace NBrightCore.render
                         {
                             if (ajaxId.StartsWith("dbl"))
                             {
-                                strXml += "<" + ajaxId + " datatype=\"double\"><![CDATA[";
+                                strXml += "<" + ajaxId + updateStatus + " datatype=\"double\"><![CDATA[";
                                 strXml += Utils.FormatToSave(nod.InnerText, TypeCode.Double);
                             }
                             else if (ajaxId.StartsWith("dte"))
                             {
-                                strXml += "<" + ajaxId + " datatype=\"date\"><![CDATA[";
+                                strXml += "<" + ajaxId + updateStatus + " datatype=\"date\"><![CDATA[";
                                 strXml += Utils.FormatToSave(nod.InnerText, TypeCode.DateTime);
                             }
                             else if (ajaxId.StartsWith("html"))
                             {
-                                strXml += "<" + ajaxId + " datatype=\"html\"><![CDATA[";
+                                strXml += "<" + ajaxId + updateStatus + " datatype=\"html\"><![CDATA[";
                                 strXml += nod.InnerText;
                             }
                             else
                             {
-                                strXml += "<" + ajaxId + "><![CDATA[";
+                                strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
                                 strXml += nod.InnerText;
                             }
                             strXml += "]]></" + ajaxId + ">";
@@ -1509,9 +1511,11 @@ namespace NBrightCore.render
                     foreach (XmlNode nod in xmlNodeList)
                     {
                         var ajaxId = "";
+                        var updateStatus = "";
                         if (nod.Attributes != null)
                         {
                             ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
+                            if (nod.Attributes["upd"] != null) updateStatus = " update=\"" + nod.Attributes["upd"].InnerText + "\"  ";
                         }
 
                         if (!ajaxId.StartsWith("ddl"))
@@ -1530,31 +1534,31 @@ namespace NBrightCore.render
                                 }
                                 if (dataTyp.ToLower() == "double")
                                 {
-                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                     strXml += Utils.FormatToSave(nod.InnerText, TypeCode.Double);
                                 }
                                 else if (dataTyp.ToLower() == "date")
                                 {
-                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                     strXml += Utils.FormatToSave(nod.InnerText, TypeCode.DateTime);
                                 }
                                 else if (dataTyp.ToLower() == "email")
                                 {
                                     //create spamsafe version
-                                    strXml += "<" + ajaxId + "_spamsafe" + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + "_spamsafe" + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                     strXml += Utils.CloakText(nod.InnerText);
                                     strXml += "]]></" + ajaxId + "_spamsafe" + ">";
                                     //create spamsafe mailto version
-                                    strXml += "<" + ajaxId + "_mailto" + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + "_mailto" + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                     strXml += Utils.CloakText(String.Format("<a href='mailto{1}{0}>{0}'></a>", nod.InnerText, ":"));
                                     strXml += "]]></" + ajaxId + "_mailto" + ">";
                                     //create normal version
-                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                     strXml += nod.InnerText;
                                 }
                                 else
                                 {
-                                    strXml += "<" + ajaxId + "><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
                                     strXml += nod.InnerText;
                                 }
                                 strXml += "]]></" + ajaxId + ">";
@@ -1582,7 +1586,9 @@ namespace NBrightCore.render
                                 }
 
                                 var ajaxId = "";
+                                var updateStatus = "";
                                 ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
+                                if (nod.Attributes["upd"] != null) updateStatus = " update=\"" + nod.Attributes["upd"].InnerText + "\"  ";
 
                                 if (!String.IsNullOrEmpty(originalXml))
                                 {
@@ -1590,7 +1596,7 @@ namespace NBrightCore.render
                                 }
                                 else
                                 {
-                                    strXml += "<" + ajaxId + ">";
+                                    strXml += "<" + ajaxId + updateStatus + ">";
                                     strXml += strValue;
                                     strXml += "</" + ajaxId + ">";
                                 }
@@ -1609,9 +1615,11 @@ namespace NBrightCore.render
                         if (nod.Attributes != null)
                         {
                             var ajaxId = "";
+                            var updateStatus = "";
                             if (nod.Attributes != null)
                             {
                                 ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
+                                if (nod.Attributes["upd"] != null) updateStatus = " update=\"" + nod.Attributes["upd"].InnerText + "\"  ";
                             }
 
                             var dataValue = "";
@@ -1629,17 +1637,17 @@ namespace NBrightCore.render
                             {
                                 if (dataTyp.ToLower() == "double")
                                 {
-                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
                                     strXml += Utils.FormatToSave(dataValue, TypeCode.Double);
                                 }
                                 else if (dataTyp.ToLower() == "date")
                                 {
-                                    strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\" selectedtext=\"" + selText + "\"><![CDATA[";
                                     strXml += Utils.FormatToSave(dataValue, TypeCode.DateTime);
                                 }
                                 else
                                 {
-                                    strXml += "<" + ajaxId + " selectedtext=\"" + selText + "\"><![CDATA[";
+                                    strXml += "<" + ajaxId + updateStatus + " selectedtext=\"" + selText + "\"><![CDATA[";
                                     strXml += dataValue;
                                 }
                                 strXml += "]]></" + ajaxId + ">";
@@ -1651,20 +1659,23 @@ namespace NBrightCore.render
 
                 strXml += "<checkboxlist>";
 
+                var updateStatus2 = new Dictionary<string, string>();
                 // build list of checkboxlists
                 var l = new List<string>();
-                xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='cb']");
+                xmlNodeList = xmlDoc1.SelectNodes("root/f[@t='cbl']");
                 if (xmlNodeList != null)
                 {
                     foreach (XmlNode nod in xmlNodeList)
                     {
                         if (nod.Attributes != null)
                         {
-                            var blnCbl = IsAjaxGroup(nod.Attributes["id"].InnerText);
-                            if (blnCbl)
-                            {
+//                            var blnCbl = IsAjaxGroup(nod.Attributes["id"].InnerText);
+  //                          if (blnCbl)
+    //                        {
                                 var ajId = GetAjaxShortId(nod.Attributes["id"].InnerText);
-                                var xmlNodeList2 = xmlDoc1.SelectNodes("root/f[@t='cb']");
+                                if (nod.Attributes["upd"] != null && !updateStatus2.ContainsKey(ajId)) updateStatus2.Add(ajId, " update=\"" + nod.Attributes["upd"].InnerText.ToLower() + "\"  ");
+
+                                var xmlNodeList2 = xmlDoc1.SelectNodes("root/f[@t='cbl']");
                                 if (xmlNodeList2 != null)
                                 {
                                     foreach (XmlNode nod2 in xmlNodeList2)
@@ -1678,14 +1689,14 @@ namespace NBrightCore.render
                                         }
                                     }
                                 }
-                            }
+      //                      }
                         }
                     }
                 }
 
                 foreach (string s in l)
                 {
-                    strXml += "<" + s + ">";
+                    strXml += "<" + s.ToLower() + updateStatus2[s] + ">";
 
                     xmlNodeList = xmlDoc1.SelectNodes("root/f[contains(@id,'" + s + "')]");
                     if (xmlNodeList != null)
@@ -1754,7 +1765,7 @@ namespace NBrightCore.render
                             }
                         }
                     }
-                    strXml += "</" + s + ">";
+                    strXml += "</" + s.ToLower() + ">";
                 }
                 strXml += "</checkboxlist>";
 
@@ -1768,8 +1779,10 @@ namespace NBrightCore.render
                         if (nod.Attributes != null)
                         {
                             var ajaxId = GetAjaxShortId(nod.Attributes["id"].InnerText).ToLower();
+                            var updateStatus = "";
+                            if (nod.Attributes["upd"] != null) updateStatus = " update=\"" + nod.Attributes["upd"].InnerText + "\"  ";
 
-                            if (nod.InnerText == "True")
+                            if (nod.InnerText.ToLower() == "true")
                             {
 
                                 var dataValue = "";
@@ -1792,17 +1805,17 @@ namespace NBrightCore.render
 
                                     if (dataTyp.ToLower() == "double")
                                     {
-                                        strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                        strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                         strXml += Utils.FormatToSave(dataValue, TypeCode.Double);
                                     }
                                     else if (dataTyp.ToLower() == "date")
                                     {
-                                        strXml += "<" + ajaxId + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                        strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
                                         strXml += Utils.FormatToSave(dataValue, TypeCode.DateTime);
                                     }
                                     else
                                     {
-                                        strXml += "<" + ajaxId + "><![CDATA[";
+                                        strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
                                         strXml += dataValue;
                                     }
                                     strXml += "]]></" + ajaxId + ">";
@@ -2118,10 +2131,15 @@ namespace NBrightCore.render
             {
                 return null;
             }
-            return GetGenXmLnode(dataXml, xmlRootName + "/" + ctrlType + "/" + ctrlId.ToLower());
+            return GetGenXmlNodeData(dataXml, xmlRootName + "/" + ctrlType + "/" + ctrlId.ToLower(), xmlRootName);
         }
 
         public static XmlNode GetGenXmLnode(string dataXml, string xPath)
+        {
+            return GetGenXmlNodeData(dataXml, xPath);
+        }
+
+        private static XmlNode GetGenXmlNodeData(string dataXml, string xPath, string xmlRootName = "genxml")
         {
             try
             {
@@ -2131,6 +2149,11 @@ namespace NBrightCore.render
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(dataXml);
                 var xmlNod = xmlDoc.SelectSingleNode(xPath);
+                // check we don;t have a language node
+                if (xmlNod == null)
+                {
+                    xmlNod = xmlDoc.SelectSingleNode(xmlRootName + "/lang/" + xPath);
+                }
                 return xmlNod;
             }
             catch (Exception)

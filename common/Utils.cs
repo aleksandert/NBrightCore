@@ -4,6 +4,8 @@ using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -12,6 +14,7 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Xml;
+using System.Xml.Linq;
 using NBrightCore.providers;
 using Image = System.Drawing.Image;
 
@@ -1093,6 +1096,62 @@ public static string RemapInternationalCharToAscii(char c)
                 return fullUrl;
                 //throw ex;   
             }
-        } 
+        }
+
+        public static string GetTranslatorHeaderValue(String clientId, String clientSecret)
+        {
+            String strTranslatorAccessURI = "https://datamarket.accesscontrol.windows.net/v2/OAuth2-13";
+            String strRequestDetails = string.Format("grant_type=client_credentials&client_id={0}&client_secret={1} &scope=http://api.microsofttranslator.com", HttpUtility.UrlEncode(clientId), HttpUtility.UrlEncode(clientSecret));
+
+            AdmAccessToken token = HttpPost(strTranslatorAccessURI, strRequestDetails);
+
+            return "Bearer " + token.access_token;
+        }
+
+		private static AdmAccessToken HttpPost(string DatamarketAccessUri, string requestDetails)
+        {
+			//Prepare OAuth request 
+            WebRequest webRequest = WebRequest.Create(DatamarketAccessUri);
+            webRequest.ContentType = "application/x-www-form-urlencoded";
+            webRequest.Method = "POST";
+			byte[] bytes = Encoding.ASCII.GetBytes(requestDetails);
+            webRequest.ContentLength = bytes.Length;
+			using (Stream outputStream = webRequest.GetRequestStream())
+            {
+                outputStream.Write(bytes, 0, bytes.Length);
+            }
+			using (WebResponse webResponse = webRequest.GetResponse())
+            {
+                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(AdmAccessToken));
+				//Get deserialized object from JSON stream
+                AdmAccessToken token = (AdmAccessToken)serializer.ReadObject(webResponse.GetResponseStream());
+				return token;
+            }
+        }
+
+
+        public static string GetTranslatedText(String headerValue, String txtToTranslate, string fromLang, string toLang)
+        {
+
+            if (fromLang != toLang)
+            {
+                string uri = "http://api.microsofttranslator.com/v2/Http.svc/Translate?text=" +
+                     System.Web.HttpUtility.UrlEncode(txtToTranslate) + "&from=" + fromLang + "&to=" + toLang;
+                System.Net.WebRequest translationWebRequest = System.Net.WebRequest.Create(uri);
+                translationWebRequest.Headers.Add("Authorization", headerValue);
+
+                System.Net.WebResponse response = null;
+                response = translationWebRequest.GetResponse();
+                System.IO.Stream stream = response.GetResponseStream();
+                System.Text.Encoding encode = System.Text.Encoding.GetEncoding("utf-8");
+
+                System.IO.StreamReader translatedStream = new System.IO.StreamReader(stream, encode);
+                System.Xml.XmlDocument xTranslation = new System.Xml.XmlDocument();
+                xTranslation.LoadXml(translatedStream.ReadToEnd());
+
+                return xTranslation.InnerText;
+            }
+            return txtToTranslate;
+        }
     }
 }
