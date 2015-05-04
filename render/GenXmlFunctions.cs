@@ -173,12 +173,15 @@ namespace NBrightCore.render
             }
 
             UploadFile(rpData, fileUploadId, folderMapPath, true);
-
-            var fName = ((HtmlGenericControl)rpData.Items[0].FindControl("hid" + fileUploadId)).Attributes["value"];
-
-            if (addToCanvas)
+            var ctrl = ((HtmlGenericControl) rpData.Items[0].FindControl("hid" + fileUploadId));
+            if (ctrl != null)
             {
-                ImgUtils.AddToCanvas(folderMapPath + fName, folderMapPath + "canvas.jpg");
+                var fName = ctrl.Attributes["value"];
+
+                if (addToCanvas)
+                {
+                    ImgUtils.AddToCanvas(folderMapPath + fName, folderMapPath + "canvas.jpg");
+                }                
             }
 
         }
