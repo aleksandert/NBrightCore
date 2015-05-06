@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Xml;
+using System.Xml.Xsl;
 
 namespace NBrightCore.common
 {
@@ -35,6 +36,11 @@ namespace NBrightCore.common
 
         public static string XslTransInMemory(string xmlData, string xslData)
         {
+            return XslTransInMemory(xmlData,xslData,null);
+        }
+
+        public static string XslTransInMemory(string xmlData, string xslData, XsltArgumentList argslist)
+        {
             try
             {
 
@@ -55,7 +61,7 @@ namespace NBrightCore.common
                 xslt.Load(xslStylesheet, settings, null);
 
                 var myWriter = new System.IO.StringWriter();
-                xslt.Transform(xmlDoc, null, myWriter);
+                xslt.Transform(xmlDoc, argslist, myWriter);
 
                 return myWriter.ToString();
             }
