@@ -122,7 +122,7 @@ namespace NBrightCore.render
                                     // add these to hidden fields before the dtabind, so we can pick them up on poatback
                                     if (!hiddenFields.ContainsKey(xmlNod.Attributes["id"].Value.ToLower())) hiddenFields.Add(xmlNod.Attributes["id"].Value.ToLower(), xmlNod.Attributes["value"].Value);
 
-                                    if (xmlNod.Attributes["id"].Value.ToLower() == "resourcepath")
+                                    if (xmlNod.Attributes["id"].Value.ToLower().StartsWith("resourcepath"))
                                     {
                                         if (!_ResourcePath.Contains(xmlNod.Attributes["value"].Value)) _ResourcePath.Add(xmlNod.Attributes["value"].Value);
                                     }
