@@ -1696,7 +1696,10 @@ namespace NBrightCore.render
 
                 foreach (string s in l)
                 {
-                    strXml += "<" + s.ToLower() + updateStatus2[s] + ">";
+                    var updattr = "";
+                    if (updateStatus2.ContainsKey(s)) updattr = updateStatus2[s]; 
+
+                    strXml += "<" + s.ToLower() + updattr + ">";
 
                     xmlNodeList = xmlDoc1.SelectNodes("root/f[contains(@id,'" + s + "')]");
                     if (xmlNodeList != null)
