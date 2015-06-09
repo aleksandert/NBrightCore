@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -2510,7 +2511,7 @@ namespace NBrightCore.render
         }
 
 
-        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null)
+        public static string RenderRepeater(IList objList, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, ConcurrentStack<Boolean> visibleStatus = null)
         {
             var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings, visibleStatus) };
 
@@ -2526,7 +2527,7 @@ namespace NBrightCore.render
             return sb.ToString();
         }
 
-        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatus = null)
+        public static string RenderRepeater(object objInfo, string templateText, string xmlRootName = "", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, ConcurrentStack<Boolean> visibleStatus = null)
         {
             var arylist = new ArrayList();
             var dlGen = new Repeater { ItemTemplate = new GenXmlTemplate(templateText, xmlRootName, dataBindXmlColumn, cultureCode, settings, visibleStatus) };

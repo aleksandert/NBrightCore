@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace NBrightCore.render
         protected Dictionary<string, string> Settings;
         private Dictionary<string, string> hiddenFields;
         private List<string> _ResourcePath;
-        private List<Boolean> visibleStatus;
+        private ConcurrentStack<Boolean> visibleStatus;
 
         public String GetHiddenFieldValue(string Key)
         {
@@ -57,7 +58,7 @@ namespace NBrightCore.render
             return _ResourcePath;
         }
 
-        public GenXmlTemplate(string templateText, Dictionary<string, string> settings, List<Boolean> visibleStatus)
+        public GenXmlTemplate(string templateText, Dictionary<string, string> settings, ConcurrentStack<Boolean> visibleStatus)
             : this(templateText, "genxml", "XMLData", "", settings, visibleStatus)
         {
         }
@@ -67,7 +68,7 @@ namespace NBrightCore.render
         {
         }
 
-        public GenXmlTemplate(string templateText, string xmlRootName = "genxml", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, List<Boolean> visibleStatusIn = null)
+        public GenXmlTemplate(string templateText, string xmlRootName = "genxml", string dataBindXmlColumn = "XMLData", string cultureCode = "", Dictionary<string, string> settings = null, ConcurrentStack<Boolean> visibleStatusIn = null)
         {
             //set the rootname of the xml, this allows for compatiblity with legacy xml structure
             Rootname = xmlRootName;
@@ -80,8 +81,8 @@ namespace NBrightCore.render
 
             if (visibleStatusIn == null)
             {
-                visibleStatus = new List<Boolean>();
-                visibleStatus.Add(true);                
+                visibleStatus = new ConcurrentStack<Boolean>();
+                visibleStatus.Push(true);
             }
             else
             {
@@ -412,7 +413,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 var xmlDoc = new XmlDocument();
                 string testValue = "";
                 string display = "";
@@ -603,17 +604,17 @@ namespace NBrightCore.render
 
                 // If the Visible flag is OFF then keep it off, even if the child test is true
                 // This allows nested tests to function correctly, by using the parent result.
-                if (!visibleStatus.Last())
+                if (!visibleStatus.DefaultIfEmpty(true).First())
                 {
-                    if (output == "{ON}" | output == "{OFF}") visibleStatus.Add(false); // only add level on {} testof
+                    if (output == "{ON}" | output == "{OFF}") visibleStatus.Push(false); // only add level on {} testof
                 }
                 else
                 {
-                    if (output == "{ON}") visibleStatus.Add(true);
-                    if (output == "{OFF}") visibleStatus.Add(false);
+                    if (output == "{ON}") visibleStatus.Push(true);
+                    if (output == "{OFF}") visibleStatus.Push(false);
                 }
 
-                if (visibleStatus.Last() && output != "{ON}") lc.Text = output;
+                if (visibleStatus.DefaultIfEmpty(true).First() && output != "{ON}") lc.Text = output;
                 if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
             }
             catch (Exception)
@@ -633,7 +634,11 @@ namespace NBrightCore.render
         {
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            if (visibleStatus.Count > 1) visibleStatus.RemoveAt(visibleStatus.Count - 1);
+            bool item;
+            if (visibleStatus.TryPop(out item))
+            {
+                // don't need to do anything, just removing the visible status due to endif
+            }
             lc.Text = "";  //always display nothign for this, it just to stop testof state.
         }
 
@@ -1303,7 +1308,7 @@ namespace NBrightCore.render
             var fu = (FileUpload)sender;
             try
             {
-                fu.Visible = visibleStatus.Last();
+                fu.Visible = visibleStatus.DefaultIfEmpty(true).First();
             }
             catch (Exception)
             {
@@ -1588,7 +1593,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = visibleStatus.Last();
+                hid.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (hid.Attributes["databind"] != null)
                 {
                     hid.Attributes["value"] = Convert.ToString(DataBinder.Eval(container.DataItem, hid.Attributes["databind"]));                    
@@ -1658,7 +1663,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = visibleStatus.Last();
+                hid.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 hid.Value = GenXmlFunctions.GetGenXmLnode(hid.ID, "hidden", Convert.ToString(DataBinder.Eval(container.DataItem, DatabindColumn))).InnerText;
             }
             catch (Exception)
@@ -1684,7 +1689,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)hid.NamingContainer;
             try
             {
-                hid.Visible = visibleStatus.Last();
+                hid.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (container.DataItem != null && DataBinder.Eval(container.DataItem, DatabindColumn) != null)
                 {
                     if ((hid.Attributes["databind"] != null))
@@ -1755,10 +1760,10 @@ namespace NBrightCore.render
             // NOTE: Do not set Text = "", If we've assign a Text value in the template (or resourcekey) then use it as default. (unless Error)
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            lc.Visible = visibleStatus.Last();
+            lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 // check if we have any formatting to do
                 var strFormat = "";
                 var strFormatType = "";
@@ -1845,10 +1850,10 @@ namespace NBrightCore.render
             // Output data, but eacape "'" to "&apos;", this is so string values can be assign in javascript.
             var lc = (Literal)sender;
             var container = (IDataItemContainer)lc.NamingContainer;
-            lc.Visible = visibleStatus.Last();
+            lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 // check if we have any formatting to do
                 var xPath = lc.Text;
                 //Get Data or set to empty is no data exits
@@ -1890,7 +1895,7 @@ namespace NBrightCore.render
                 var xpath = s[0];
                 var displaytype = "";
                 if (s.Length > 1) displaytype = s[1]; 
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 var xmlNod = GenXmlFunctions.GetGenXmLnode((string)DataBinder.Eval(container.DataItem, DatabindColumn), s[0]);
                 lc.Text = "";
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
@@ -1948,7 +1953,7 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text =Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", "")));
@@ -1992,7 +1997,7 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 var strXml = DataBinder.Eval(container.DataItem, DatabindColumn).ToString();
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(strXml);
@@ -2017,7 +2022,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (lc.Text.ToLower().StartsWith("resxdata:"))
                 {
                     //Text data passed as resx, so display it.
@@ -2056,7 +2061,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)lc.NamingContainer;
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (lc.Text.ToLower().StartsWith("databind:"))
                 {
                     lc.Text = System.Web.HttpUtility.HtmlDecode(Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text.ToLower().Replace("databind:", ""))));
@@ -2087,7 +2092,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)cmd.NamingContainer;
             try
             {
-                cmd.Visible = visibleStatus.Last();
+                cmd.Visible = visibleStatus.DefaultIfEmpty(true).First();
 
                 if (cmd.Text.ToLower().StartsWith("databind:"))
                 {
@@ -2136,7 +2141,7 @@ namespace NBrightCore.render
         private void LiteralDataBinding(object sender, EventArgs e)
         {
             var lc = (Literal)sender;
-            lc.Visible = visibleStatus.Last();
+            lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
         }
 
         private void GeneralDataBinding(object sender, EventArgs e)
@@ -2146,7 +2151,7 @@ namespace NBrightCore.render
 
             try
             {
-                lc.Visible = visibleStatus.Last();
+                lc.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 lc.Text = Convert.ToString(DataBinder.Eval(container.DataItem, lc.Text));
             }
             catch (Exception)
@@ -2163,7 +2168,7 @@ namespace NBrightCore.render
 
             try
             {
-                rbl.Visible = visibleStatus.Last();
+                rbl.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 string strValue;
                 if ((rbl.Attributes["databind"] != null))
                 {
@@ -2191,7 +2196,7 @@ namespace NBrightCore.render
 
             try
             {
-                chk.Visible = visibleStatus.Last();
+                chk.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 var xmlNod = GenXmlFunctions.GetGenXmLnode(chk.ID, "checkboxlist", (string)DataBinder.Eval(container.DataItem, DatabindColumn));
                 var xmlNodeList = xmlNod.SelectNodes("./chk");
                 if (xmlNodeList != null)
@@ -2249,7 +2254,7 @@ namespace NBrightCore.render
 
             try
             {
-                chk.Visible = visibleStatus.Last();
+                chk.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if ((chk.Attributes["databind"] != null))
                 {
                     chk.Checked = Convert.ToBoolean(Convert.ToString(DataBinder.Eval(container.DataItem, chk.Attributes["databind"])));
@@ -2273,7 +2278,7 @@ namespace NBrightCore.render
 
             try
             {
-                ddl.Visible = visibleStatus.Last();
+                ddl.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 string strValue;
                 if ((ddl.Attributes["databind"] != null))
                 {
@@ -2314,7 +2319,7 @@ namespace NBrightCore.render
 
             try
             {
-                txt.Visible = visibleStatus.Last();
+                txt.Visible = visibleStatus.DefaultIfEmpty(true).First();
                 if (txt.Width == 0) txt.Visible = false; // always hide if we have a width of zero.
                 if ((txt.Attributes["databind"] != null))
                 {
@@ -2367,7 +2372,7 @@ namespace NBrightCore.render
             var container = (IDataItemContainer)cmd.NamingContainer;
             try
             {
-                cmd.Visible = visibleStatus.Last();
+                cmd.Visible = visibleStatus.DefaultIfEmpty(true).First();
 
                 if (cmd.Text.ToLower().StartsWith("databind:"))
                 {
