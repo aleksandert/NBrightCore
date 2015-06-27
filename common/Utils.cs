@@ -315,6 +315,7 @@ namespace NBrightCore.common
             string fileContent;
             try
             {
+                if (!File.Exists(filePath)) return "";
                 reader = File.OpenText(filePath);
                 fileContent = reader.ReadToEnd();
             }
