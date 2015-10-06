@@ -1559,7 +1559,14 @@ namespace NBrightCore.render
                                 }
                                 else
                                 {
-                                    strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
+                                    if (dataTyp.ToLower() != "")
+                                    {
+                                        strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
+                                    }
+                                    else
+                                    {
+                                        strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
+                                    }
                                     strXml += nod.InnerText;
                                 }
                                 strXml += "]]></" + ajaxId + ">";
