@@ -1154,5 +1154,20 @@ public static string RemapInternationalCharToAscii(char c)
             }
             return txtToTranslate;
         }
+
+        public static string ReplaceFirstOccurrence(string source, string find, string replace)
+        {
+            int place = source.IndexOf(find, StringComparison.Ordinal);
+            string result = source.Remove(place, find.Length).Insert(place, replace);
+            return result;
+        }
+
+        public static string ReplaceLastOccurrence(string source, string find, string replace)
+        {
+            int place = source.LastIndexOf(find, StringComparison.Ordinal);
+            string result = source.Remove(place, find.Length).Insert(place, replace);
+            return result;
+        }
+
     }
 }

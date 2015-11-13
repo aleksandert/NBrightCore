@@ -2021,7 +2021,7 @@ namespace NBrightCore.render
                 }
                 
                 //Add the node to the document.
-                var selectSingleNode = xmlDoc.SelectSingleNode(xPath.Replace(partsOfXPath[partsOfXPath.Length -1], "").TrimEnd('/'));
+                var selectSingleNode = xmlDoc.SelectSingleNode(Utils.ReplaceLastOccurrence(xPath, partsOfXPath[partsOfXPath.Length - 1], "").TrimEnd('/'));
                 if (selectSingleNode != null)                    
                 {
                     selectSingleNode.AppendChild(elem);
