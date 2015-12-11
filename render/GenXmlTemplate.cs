@@ -1203,6 +1203,7 @@ namespace NBrightCore.render
 
             if (xmlNod.Attributes != null && (xmlNod.Attributes["placeholder"] != null)) txt.Attributes.Add("placeholder", xmlNod.Attributes["placeholder"].InnerXml);
             if (xmlNod.Attributes != null && (xmlNod.Attributes["disabled"] != null)) txt.Attributes.Add("disabled", xmlNod.Attributes["disabled"].InnerXml);
+            if (xmlNod.Attributes != null && (xmlNod.Attributes["autocomplete"] != null)) txt.Attributes.Add("autocomplete", xmlNod.Attributes["autocomplete"].InnerXml);
 
 
             txt.Visible = GetRoleVisible(xmlNod.OuterXml);
