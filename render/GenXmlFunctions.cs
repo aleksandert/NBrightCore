@@ -2914,10 +2914,10 @@ namespace NBrightCore.render
                 {
                     strOut += "([" + dataField + "].value('(" + xpath;
                     strOut += ")[1]', 'nvarchar(max)";
-                    strOut += "') " + testoperator + " '" + searchText + Convert.ToChar("'");
-                    strOut += ")";
+                    strOut += "') " + testoperator + " '" + searchText + Convert.ToChar("'") + " collate SQL_Latin1_General_CP1_CI_AI ";
+                    strOut += ") ";
                 }
-                strOut += ")";
+                strOut += ") ";
                 lp = lp + 1;
             }
 
@@ -2949,10 +2949,10 @@ namespace NBrightCore.render
                 {
                     strOut += "([" + dataField + "].value('(" + xpath;
                     strOut += ")[1]', 'nvarchar(max)";
-                    strOut += "') LIKE '%" + word + "%'";
+                    strOut += "') LIKE '%" + word + "%' collate SQL_Latin1_General_CP1_CI_AI ";
                     strOut += ")";
                 }
-                strOut += ")";
+                strOut += ") ";
                 lp = lp + 1;
             }
 
