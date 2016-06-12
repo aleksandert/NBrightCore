@@ -616,6 +616,8 @@ namespace NBrightCore.render
 
                 if (visibleStatus.DefaultIfEmpty(true).First() && output != "{ON}") lc.Text = output;
                 if (output == "{ON}" | output == "{OFF}") lc.Text = ""; // don;t display the test tag
+                if (output == "{commentON}") lc.Text = "<!--";
+                if (output == "{commentOFF}") lc.Text = "-->";
             }
             catch (Exception)
             {
