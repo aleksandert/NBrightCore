@@ -602,12 +602,24 @@ public static string UrlFriendly(string title)
     for (int i = 0; i < len; i++)
     {
         c = title[i];
-        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
+        if ((c >= 'a' && c <= 'z') || (c >= 'а' && c <= 'я') || (c >= '0' && c <= '9'))
         {
             sb.Append(c);
             prevdash = false;
         }
-        else if (c >= 'A' && c <= 'Z')
+        else if ((c >= 0x4E00 && c <= 0x9FFF) ||
+        (c >= 0x3400 && c <= 0x4DBF) ||
+        (c >= 0x3400 && c <= 0x4DBF) ||
+        (c >= 0x20000 && c <= 0x2CEAF) ||
+        (c >= 0x2E80 && c <= 0x31EF) ||
+        (c >= 0xF900 && c <= 0xFAFF) ||
+        (c >= 0xFE30 && c <= 0xFE4F) ||
+        (c >= 0xF2800 && c <= 0x2FA1F))
+        {
+            sb.Append(c);
+            prevdash = false;
+        }
+        else if (c >= 'A' && c <= 'Z' || (c >= 'А' && c <= 'Я'))
         {
             // tricky way to convert to lowercase
             sb.Append((char)(c | 32));
