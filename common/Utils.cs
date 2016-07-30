@@ -256,12 +256,12 @@ namespace NBrightCore.common
             if (cultureCode != "")
             {
                 var cultureInfo = new CultureInfo(cultureCode, true);
-                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, cultureInfo.NumberFormat,
+                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Number, cultureInfo.NumberFormat,
                     out retNum);
             }
             else
             {
-                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Any, CultureInfo.InvariantCulture,
+                isNum = Double.TryParse(Convert.ToString(expression), NumberStyles.Number, CultureInfo.InvariantCulture,
                     out retNum);
             }
 
