@@ -191,9 +191,9 @@ namespace NBrightCore.common
                         var dte = Convert.ToDateTime(inpData);
                         return dte.ToString("s");
                     }
-                    return inpData;
+                    return "";
                 default:
-                    return inpData;
+                    return Security.FormatDisableScripting(inpData);
             }
         }
 

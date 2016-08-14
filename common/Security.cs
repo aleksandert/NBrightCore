@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace NBrightCore.common
 {
@@ -48,7 +52,8 @@ namespace NBrightCore.common
                         //decrypt
                         var objDes = new DESCryptoServiceProvider();
                         var objMemoryStream = new MemoryStream();
-                        var objCryptoStream = new CryptoStream(objMemoryStream, objDes.CreateDecryptor(byteKey, byteVector), CryptoStreamMode.Write);
+                        var objCryptoStream = new CryptoStream(objMemoryStream,
+                            objDes.CreateDecryptor(byteKey, byteVector), CryptoStreamMode.Write);
                         objCryptoStream.Write(byteData, 0, byteData.Length);
                         objCryptoStream.FlushFinalBlock();
 
@@ -94,7 +99,8 @@ namespace NBrightCore.common
                 //encrypt 
                 var objDes = new DESCryptoServiceProvider();
                 var objMemoryStream = new MemoryStream();
-                var objCryptoStream = new CryptoStream(objMemoryStream, objDes.CreateEncryptor(byteKey, byteVector), CryptoStreamMode.Write);
+                var objCryptoStream = new CryptoStream(objMemoryStream, objDes.CreateEncryptor(byteKey, byteVector),
+                    CryptoStreamMode.Write);
                 objCryptoStream.Write(byteData, 0, byteData.Length);
                 objCryptoStream.FlushFinalBlock();
 
@@ -106,6 +112,97 @@ namespace NBrightCore.common
                 strValue = strData;
             }
             return strValue;
+        }
+
+        ///-----------------------------------------------------------------------------
+        /// <summary>
+        /// This function uses Regex search strings to remove HTML tags which are
+        /// targeted in Cross-site scripting (XSS) attacks.  This function will evolve
+        /// to provide more robust checking as additional holes are found.
+        /// </summary>
+        /// <param name="strInput">This is the string to be filtered</param>
+        /// <returns>Filtered UserInput</returns>
+        /// <remarks>
+        /// This is a private function that is used internally by the FormatDisableScripting function
+        /// </remarks>
+        /// <history>
+        ///     [cathal]        3/06/2007   Created
+        /// </history>
+        ///-----------------------------------------------------------------------------
+        private static string FilterStrings(string strInput)
+        {
+            //setup up list of search terms as items may be used twice
+            var tempInput = strInput;
+            var listStrings = new List<string>
+            {
+                "<script[^>]*>.*?</script[^><]*>",
+                "<script",
+                "<input[^>]*>.*?</input[^><]*>",
+                "<object[^>]*>.*?</object[^><]*>",
+                "<embed[^>]*>.*?</embed[^><]*>",
+                "<applet[^>]*>.*?</applet[^><]*>",
+                "<form[^>]*>.*?</form[^><]*>",
+                "<option[^>]*>.*?</option[^><]*>",
+                "<select[^>]*>.*?</select[^><]*>",
+                "<iframe[^>]*>.*?</iframe[^><]*>",
+                "<iframe.*?<",
+                "<iframe.*?",
+                "<ilayer[^>]*>.*?</ilayer[^><]*>",
+                "<form[^>]*>",
+                "</form[^><]*>",
+                "onerror",
+                "onmouseover",
+                "javascript:",
+                "vbscript:",
+                "unescape",
+                "alert[\\s(&nbsp;)]*\\([\\s(&nbsp;)]*'?[\\s(&nbsp;)]*[\"(&quot;)]?",
+                @"eval*.\(",
+                "onload"
+            };
+
+            const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.Singleline;
+            const string replacement = " ";
+
+            //check if text contains encoded angle brackets, if it does it we decode it to check the plain text
+            if (tempInput.Contains("&gt;") && tempInput.Contains("&lt;"))
+            {
+                //text is encoded, so decode and try again
+                tempInput = HttpUtility.HtmlDecode(tempInput);
+                tempInput = listStrings.Aggregate(tempInput,
+                    (current, s) => Regex.Replace(current, s, replacement, options));
+
+                //Re-encode
+                tempInput = HttpUtility.HtmlEncode(tempInput);
+            }
+            else
+            {
+                tempInput = listStrings.Aggregate(tempInput,
+                    (current, s) => Regex.Replace(current, s, replacement, options));
+            }
+            return tempInput;
+        }
+
+        ///-----------------------------------------------------------------------------
+        /// <summary>
+        /// This function uses Regex search strings to remove HTML tags which are
+        /// targeted in Cross-site scripting (XSS) attacks.  This function will evolve
+        /// to provide more robust checking as additional holes are found.
+        /// </summary>
+        /// <param name="strInput">This is the string to be filtered</param>
+        /// <returns>Filtered UserInput</returns>
+        /// <remarks>
+        /// This is a private function that is used internally by the InputFilter function
+        /// </remarks>
+        ///-----------------------------------------------------------------------------
+        public static string FormatDisableScripting(string strInput)
+        {
+            var tempInput = strInput;
+            if (strInput == " " || String.IsNullOrEmpty(strInput))
+            {
+                return tempInput;
+            }
+            tempInput = FilterStrings(tempInput);
+            return tempInput;
         }
 
     }
