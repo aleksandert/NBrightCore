@@ -114,22 +114,23 @@ namespace NBrightCore.common
             return strValue;
         }
 
-        ///-----------------------------------------------------------------------------
-        /// <summary>
-        /// This function uses Regex search strings to remove HTML tags which are
-        /// targeted in Cross-site scripting (XSS) attacks.  This function will evolve
-        /// to provide more robust checking as additional holes are found.
-        /// </summary>
-        /// <param name="strInput">This is the string to be filtered</param>
+        /// -----------------------------------------------------------------------------
+        ///  <summary>
+        ///  This function uses Regex search strings to remove HTML tags which are
+        ///  targeted in Cross-site scripting (XSS) attacks.  This function will evolve
+        ///  to provide more robust checking as additional holes are found.
+        ///  </summary>
+        ///  <param name="strInput">This is the string to be filtered</param>
+        /// <param name="filterlinks">remove href elements</param>
         /// <returns>Filtered UserInput</returns>
-        /// <remarks>
-        /// This is a private function that is used internally by the FormatDisableScripting function
-        /// </remarks>
-        /// <history>
-        ///     [cathal]        3/06/2007   Created
-        /// </history>
-        ///-----------------------------------------------------------------------------
-        private static string FilterStrings(string strInput)
+        ///  <remarks>
+        ///  This is a private function that is used internally by the FormatDisableScripting function
+        ///  </remarks>
+        ///  <history>
+        ///      [cathal]        3/06/2007   Created
+        ///  </history>
+        /// -----------------------------------------------------------------------------
+        private static string FilterStrings(string strInput, bool filterlinks)
         {
             //setup up list of search terms as items may be used twice
             var tempInput = strInput;
@@ -160,6 +161,12 @@ namespace NBrightCore.common
                 "onload"
             };
 
+            if (filterlinks)
+            {
+                listStrings.Add("<a[^>]*>.*?</a[^><]*>");
+                listStrings.Add("<a");
+            }
+
             const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.Singleline;
             const string replacement = " ";
 
@@ -182,26 +189,27 @@ namespace NBrightCore.common
             return tempInput;
         }
 
-        ///-----------------------------------------------------------------------------
-        /// <summary>
-        /// This function uses Regex search strings to remove HTML tags which are
-        /// targeted in Cross-site scripting (XSS) attacks.  This function will evolve
-        /// to provide more robust checking as additional holes are found.
-        /// </summary>
-        /// <param name="strInput">This is the string to be filtered</param>
+        /// -----------------------------------------------------------------------------
+        ///  <summary>
+        ///  This function uses Regex search strings to remove HTML tags which are
+        ///  targeted in Cross-site scripting (XSS) attacks.  This function will evolve
+        ///  to provide more robust checking as additional holes are found.
+        ///  </summary>
+        ///  <param name="strInput">This is the string to be filtered</param>
+        /// <param name="filterlinks">Remove href link elements</param>
         /// <returns>Filtered UserInput</returns>
-        /// <remarks>
-        /// This is a private function that is used internally by the InputFilter function
-        /// </remarks>
-        ///-----------------------------------------------------------------------------
-        public static string FormatDisableScripting(string strInput)
+        ///  <remarks>
+        ///  This is a private function that is used internally by the InputFilter function
+        ///  </remarks>
+        /// -----------------------------------------------------------------------------
+        public static string FormatDisableScripting(string strInput, bool filterlinks = true)
         {
             var tempInput = strInput;
             if (strInput == " " || String.IsNullOrEmpty(strInput))
             {
                 return tempInput;
             }
-            tempInput = FilterStrings(tempInput);
+            tempInput = FilterStrings(tempInput, filterlinks);
             return tempInput;
         }
 

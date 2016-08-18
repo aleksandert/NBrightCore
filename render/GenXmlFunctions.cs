@@ -1437,7 +1437,16 @@ namespace NBrightCore.render
             return xmlData.Replace("**CDATASTART**","<![CDATA[").Replace("**CDATAEND**","]]>");
         }
 
-        public static string GetGenXmlByAjax(string xmlAjaxData, string originalXml, string lang = "en-GB", string xmlRootName = "genxml")
+        /// <summary>
+        /// Convert ajax xml passed form client into DB XML strucutre.
+        /// </summary>
+        /// <param name="xmlAjaxData"></param>
+        /// <param name="originalXml"></param>
+        /// <param name="xmlRootName"></param>
+        /// <param name="ignoresecurityfilter"></param>
+        /// <param name="filterlinks"></param>
+        /// <returns></returns>
+        public static string GetGenXmlByAjax(string xmlAjaxData, string originalXml, string xmlRootName = "genxml",bool ignoresecurityfilter = false, bool filterlinks = false)
         {
 
             //load original XML for update  
@@ -1491,12 +1500,26 @@ namespace NBrightCore.render
                             else if (ajaxId.StartsWith("html"))
                             {
                                 strXml += "<" + ajaxId + updateStatus + " datatype=\"html\"><![CDATA[";
-                                strXml += nod.InnerText;
+                                if (ignoresecurityfilter)
+                                {
+                                    strXml += nod.InnerText;
+                                }
+                                else
+                                {
+                                    strXml += Security.FormatDisableScripting(nod.InnerText, filterlinks);
+                                }
                             }
                             else
                             {
                                 strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
-                                strXml += nod.InnerText;
+                                if (ignoresecurityfilter)
+                                {
+                                    strXml += nod.InnerText;
+                                }
+                                else
+                                {
+                                    strXml += Security.FormatDisableScripting(nod.InnerText,filterlinks);
+                                }
                             }
                             strXml += "]]></" + ajaxId + ">";
                         }
@@ -1555,7 +1578,7 @@ namespace NBrightCore.render
                                     strXml += "]]></" + ajaxId + "_mailto" + ">";
                                     //create normal version
                                     strXml += "<" + ajaxId + updateStatus + " datatype=\"" + dataTyp.ToLower() + "\"><![CDATA[";
-                                    strXml += nod.InnerText;
+                                    strXml += Security.FormatDisableScripting(nod.InnerText);
                                 }
                                 else
                                 {
@@ -1567,7 +1590,16 @@ namespace NBrightCore.render
                                     {
                                         strXml += "<" + ajaxId + updateStatus + "><![CDATA[";
                                     }
-                                    strXml += nod.InnerText;
+
+                                    if (ignoresecurityfilter)
+                                    {
+                                        strXml += nod.InnerText;
+                                    }
+                                    else
+                                    {
+                                        strXml += Security.FormatDisableScripting(nod.InnerText, filterlinks);
+                                    }
+
                                 }
                                 strXml += "]]></" + ajaxId + ">";
                             }
@@ -2052,8 +2084,14 @@ namespace NBrightCore.render
             }
         }
 
-        public static string SetGenXmlValue(string dataXml, string xpath, string Value, bool cdata = true)
+        public static string SetGenXmlValue(string dataXml, string xpath, string Value, bool cdata = true, bool ignoresecurityfilter = false, bool filterlinks = false)
         {
+            if (ignoresecurityfilter)
+            {
+                // clear cross scripting if not html field.
+                Value = Security.FormatDisableScripting(Value,filterlinks);
+            }
+
             var xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(dataXml);
             if (xpath.Contains("@"))
